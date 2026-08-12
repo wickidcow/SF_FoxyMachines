@@ -6,7 +6,7 @@
 
     <groupId>me.gallowsdove</groupId>
     <artifactId>FoxyMachines</artifactId>
-    <version>MODIFIED</version>
+    <version>1.0.0</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -43,7 +43,7 @@
     </pluginRepositories>
 
     <build>
-        <finalName>${project.name}</finalName>
+        <finalName>SF_FoxyMachines_Legacy_v${project.version}</finalName>
         <defaultGoal>clean package</defaultGoal>
         <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
 
