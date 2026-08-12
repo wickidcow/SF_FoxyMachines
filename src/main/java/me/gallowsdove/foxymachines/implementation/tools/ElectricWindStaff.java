@@ -8,6 +8,7 @@ import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import me.gallowsdove.foxymachines.Items;
 import org.bukkit.Effect;
 import org.bukkit.Sound;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -45,7 +46,7 @@ public class ElectricWindStaff extends SlimefunItem implements Rechargeable {
             if (removeItemCharge(item, COST)) {
                 p.setVelocity(p.getEyeLocation().getDirection().multiply(4));
                 p.getWorld().playSound(p.getLocation(), Sound.ENTITY_TNT_PRIMED, 1, 1);
-                p.getWorld().playEffect(p.getLocation(), Effect.SMOKE, 1);
+                p.getWorld().playEffect(p.getLocation(), Effect.SMOKE_SHOOT, BlockFace.UP);
                 p.setFallDistance(0F);
             }
         };
