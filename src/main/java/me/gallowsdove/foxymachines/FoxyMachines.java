@@ -16,6 +16,7 @@ import me.gallowsdove.foxymachines.implementation.consumables.UnbreakableRune;
 import me.gallowsdove.foxymachines.implementation.machines.ForcefieldDome;
 import me.gallowsdove.foxymachines.implementation.tools.BerryBushTrimmer;
 import me.gallowsdove.foxymachines.listeners.*;
+import me.gallowsdove.foxymachines.services.ChunkLoaderQuotaService;
 import me.gallowsdove.foxymachines.tasks.GhostBlockTask;
 import me.gallowsdove.foxymachines.tasks.MobTicker;
 import me.gallowsdove.foxymachines.tasks.QuestTicker;
@@ -28,6 +29,7 @@ public class FoxyMachines extends AbstractAddon {
     private static FoxyMachines instance;
 
     public String folderPath;
+    private ChunkLoaderQuotaService chunkLoaderQuotaService;
 
     public FoxyMachines() {
         super("wickidcow", "SF_FoxyMachines", "master", "auto-update");
@@ -37,9 +39,12 @@ public class FoxyMachines extends AbstractAddon {
     @SneakyThrows
     public void enable() {
         instance = this;
+        this.folderPath = getDataFolder().getAbsolutePath() + File.separator + "data-storage" + File.separator;
+        this.chunkLoaderQuotaService = new ChunkLoaderQuotaService(this);
 
         Events.registerListener(new ChunkLoadListener());
         Events.registerListener(new ChunkLoaderListener());
+        Events.registerListener(chunkLoaderQuotaService);
         Events.registerListener(new SlimeWorldCompatListener());
         Events.registerListener(new BoostedRailListener());
         Events.registerListener(new BerryBushListener());
@@ -59,7 +64,6 @@ public class FoxyMachines extends AbstractAddon {
         ItemSetup.INSTANCE.init();
         ResearchSetup.INSTANCE.init();
 
-        this.folderPath = getDataFolder().getAbsolutePath() + File.separator + "data-storage" + File.separator;
         BerryBushTrimmer.loadTrimmedBlocks();
         ForcefieldDome.loadDomeLocations();
         Scheduler.run(() -> ForcefieldDome.INSTANCE.setupDomes());
@@ -91,5 +95,10 @@ public class FoxyMachines extends AbstractAddon {
     @Nonnull
     public static FoxyMachines getInstance() {
         return instance;
+    }
+
+    @Nonnull
+    public ChunkLoaderQuotaService getChunkLoaderQuotaService() {
+        return chunkLoaderQuotaService;
     }
 }
