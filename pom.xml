@@ -6,7 +6,7 @@
 
     <groupId>me.gallowsdove</groupId>
     <artifactId>FoxyMachines</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
