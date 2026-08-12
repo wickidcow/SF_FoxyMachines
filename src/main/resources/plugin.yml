@@ -2,13 +2,13 @@ name: FoxyMachines
 main: me.gallowsdove.foxymachines.FoxyMachines
 
 author: GallowsDove
-description: Adds tools, machines, items, armor, weapons, bosses and more!
-website: https://github.com/GallowsDove/FoxyMachines
+description: Adds tools, machines, items, armor, weapons, bosses and more! Albion Slimefun Legacy fork for modern Paper.
+website: https://github.com/wickidcow/SF_FoxyMachines
 
 depend: [Slimefun]
 softdepend: [AuraSkills]
 version: ${project.version}
-api-version: 1.16
+api-version: '1.21'
 
 commands:
   foxymachines:
