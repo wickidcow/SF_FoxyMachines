@@ -12,6 +12,17 @@ import re
 ROOT = Path(__file__).resolve().parents[2]
 JAVA_ROOT = ROOT / "src" / "main" / "java"
 
+# Repairs for an early migration pass that used prefix replacement. Keeping
+# these here makes the script safe and idempotent for any branch based on it.
+TOKEN_REPAIRS = {
+    "PotionEffectType.INSTANT_HEALTHTH_BOOST": "PotionEffectType.HEALTH_BOOST",
+    "PotionEffectType.SLOWNESS_FALLING": "PotionEffectType.SLOW_FALLING",
+    "PotionEffectType.SLOWNESSNESS": "PotionEffectType.SLOWNESS",
+    "PotionEffectType.SLOWNESS_DIGGING": "PotionEffectType.MINING_FATIGUE",
+    "PotionEffectType.JUMP_BOOST_BOOST": "PotionEffectType.JUMP_BOOST",
+    "Enchantment.LUCK_OF_THE_SEA_OF_THE_SEA": "Enchantment.LUCK_OF_THE_SEA",
+}
+
 REPLACEMENTS = {
     # Enchantments: legacy Bukkit aliases -> modern registry names.
     "Enchantment.PROTECTION_ENVIRONMENTAL": "Enchantment.PROTECTION",
@@ -64,6 +75,12 @@ REPLACEMENTS = {
     "Particle.VILLAGER_HAPPY": "Particle.HAPPY_VILLAGER",
     "Particle.VILLAGER_ANGRY": "Particle.ANGRY_VILLAGER",
 }
+
+
+def replace_exact_java_token(text: str, old: str, new: str) -> str:
+    # Do not replace prefixes of longer enum constants such as HEAL in
+    # HEALTH_BOOST, SLOW in SLOW_FALLING, or LUCK in LUCK_OF_THE_SEA.
+    return re.sub(re.escape(old) + r"(?![A-Za-z0-9_])", new, text)
 
 
 def modernize_potion_mixer(text: str) -> str:
@@ -121,8 +138,11 @@ def main() -> None:
         original = path.read_text(encoding="utf-8")
         updated = original
 
+        for bad, good in TOKEN_REPAIRS.items():
+            updated = updated.replace(bad, good)
+
         for old, new in REPLACEMENTS.items():
-            updated = updated.replace(old, new)
+            updated = replace_exact_java_token(updated, old, new)
 
         if path.name == "PotionMixer.java":
             updated = modernize_potion_mixer(updated)
