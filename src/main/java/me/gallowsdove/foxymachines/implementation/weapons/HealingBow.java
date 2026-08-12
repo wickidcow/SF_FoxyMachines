@@ -30,7 +30,7 @@ public class HealingBow extends SlimefunBow {
             n.getWorld().playEffect(n.getEyeLocation(), Effect.STEP_SOUND, Material.BRAIN_CORAL);
             e.getDamager().remove();
             e.setCancelled(true);
-            n.addPotionEffect(new PotionEffect(PotionEffectType.HEAL, 1, (int)Math.floor(e.getDamage()/5)));
+            n.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTH, 1, (int)Math.floor(e.getDamage()/5)));
         };
     }
 }

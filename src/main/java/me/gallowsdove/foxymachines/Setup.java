@@ -234,13 +234,13 @@ final class ItemSetup {
                     Items.PIXIE_QUEEN_HEART, null, null,
                     null, null, null,
                     null, null, null
-                    }, new PotionEffect[]{new PotionEffect(PotionEffectType.INCREASE_DAMAGE, 1600, 3, false, false)},
+                    }, new PotionEffect[]{new PotionEffect(PotionEffectType.STRENGTH, 1600, 3, false, false)},
                     8).register(FoxyMachines.getInstance());
             new SimpleConsumable(Items.VILE_SEEDS, RecipeType.GRIND_STONE, new ItemStack[]{
                     Items.VILE_PUMPKIN, null, null,
                     null, null, null,
                     null, null, null
-                    }, new PotionEffect[]{new PotionEffect(PotionEffectType.HEALTH_BOOST, 2700, 4, false, false)},
+                    }, new PotionEffect[]{new PotionEffect(PotionEffectType.INSTANT_HEALTHTH_BOOST, 2700, 4, false, false)},
                     6).register(FoxyMachines.getInstance());
             new SimpleMaterial(Items.BOSSES_ITEM_GROUP, Items.PIXIE_QUEEN_HEART, FoxyRecipeType.CUSTOM_MOB_DROP, new ItemStack[]{
                     null, null, null,
@@ -319,7 +319,7 @@ final class ItemSetup {
                 Items.EQUANIMOUS_GEM, Items.MAGIC_LUMP_5, Items.EQUANIMOUS_GEM,
                 Items.POLAR_FOX_HIDE, Items.RESISTANT_CHESTPLATE_FRAME, Items.POLAR_FOX_HIDE,
                 Items.EQUANIMOUS_GEM, Items.MAGIC_LUMP_5, Items.EQUANIMOUS_GEM},
-                new PotionEffect[] { new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 300, 0, false, false, false),
+                new PotionEffect[] { new PotionEffect(PotionEffectType.RESISTANCE, 300, 0, false, false, false),
                         new PotionEffect(PotionEffectType.REGENERATION, 300, 0, false, false, false)})
                 .register(FoxyMachines.getInstance());
         new SlimefunArmorPiece(Items.WEAPONS_AND_ARMORS_ITEM_GROUP, Items.FIERY_LEGGINGS, RecipeType.ANCIENT_ALTAR, new ItemStack[]{
@@ -333,7 +333,7 @@ final class ItemSetup {
                 Items.PARROT_FEATHER, Items.LIGHT_BOOTS_FRAME, Items.PARROT_FEATHER,
                 Items.EQUANIMOUS_GEM, Items.MAGIC_LUMP_5, Items.EQUANIMOUS_GEM},
                 new PotionEffect[] { new PotionEffect(PotionEffectType.SPEED, 300, 1, false, false, false),
-                        new PotionEffect(PotionEffectType.JUMP, 300, 1, false, false, false)})
+                        new PotionEffect(PotionEffectType.JUMP_BOOST, 300, 1, false, false, false)})
                 .register(FoxyMachines.getInstance());
         new ImprovementForge().register(FoxyMachines.getInstance());
         new PotionMixer().register(FoxyMachines.getInstance());
