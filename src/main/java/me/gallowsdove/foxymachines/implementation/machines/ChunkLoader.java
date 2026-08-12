@@ -71,7 +71,7 @@ public class ChunkLoader extends SlimefunItem {
         return new BlockPlaceHandler(false) {
             @Override
             public void onPlayerPlace(@Nonnull BlockPlaceEvent e) {
-                var container = StorageCacheUtils.getDataContainer(e.getBlock().getLocation());
+                var container = StorageCacheUtils.getBlock(e.getBlock().getLocation());
                 if (container == null) {
                     FoxyMachines.log(Level.WARNING, "Could not persist Chunk Loader owner data at " + e.getBlock().getLocation());
                     return;
