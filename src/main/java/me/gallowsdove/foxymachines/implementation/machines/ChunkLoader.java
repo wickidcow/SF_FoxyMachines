@@ -9,6 +9,7 @@ import io.github.thebusybiscuit.slimefun4.core.handlers.BlockUseHandler;
 import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
+import me.gallowsdove.foxymachines.listeners.SlimeWorldCompatListener;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -44,14 +45,21 @@ public class ChunkLoader extends SlimefunItem {
             @Override
             public void onPlayerBreak(@Nonnull BlockBreakEvent e, @Nonnull ItemStack item, @Nonnull List<ItemStack> drops) {
                 Block b = e.getBlock();
-                if (BlockStorage.getLocationInfo(b.getLocation(), "owner") != null) {
+                String owner = BlockStorage.getLocationInfo(b.getLocation(), "owner");
+                if (owner != null) {
                     NamespacedKey key = new NamespacedKey(FoxyMachines.getInstance(), "chunkloaders");
-                    Player p = Bukkit.getPlayer(UUID.fromString(BlockStorage.getLocationInfo(b.getLocation(), "owner")));
+                    Player p = Bukkit.getPlayer(UUID.fromString(owner));
 
-                    int i = p.getPersistentDataContainer().get(key, PersistentDataType.INTEGER) - 1;
-                    p.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, i);
+                    // The owner may be offline when another player breaks the loader.
+                    // Avoid the historical NPE; an online owner's placement count is
+                    // still updated exactly as before.
+                    if (p != null) {
+                        int current = p.getPersistentDataContainer().getOrDefault(key, PersistentDataType.INTEGER, 1);
+                        p.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, Math.max(0, current - 1));
+                    }
 
                     b.getChunk().setForceLoaded(false);
+                    SlimeWorldCompatListener.unmarkManaged(b.getChunk());
                     BlockStorage.clearBlockInfo(b);
                 }
 
