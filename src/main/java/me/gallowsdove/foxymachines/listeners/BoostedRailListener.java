@@ -20,7 +20,7 @@ public class BoostedRailListener implements Listener {
         if (e.getVehicle() instanceof Minecart cart) {
             Block b = cart.getLocation().getBlock();
             if (RAILS.contains(b.getType())) {
-                if (StorageCacheUtils.getSlimefunItem(b.getLocation()) instanceof BoostedRail) {
+                if (StorageCacheUtils.getSfItem(b.getLocation()) instanceof BoostedRail) {
                     cart.setMaxSpeed(1d);
                 } else {
                     cart.setMaxSpeed(.4d);
