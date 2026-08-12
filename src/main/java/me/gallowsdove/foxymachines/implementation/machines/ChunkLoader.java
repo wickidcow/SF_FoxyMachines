@@ -11,18 +11,15 @@ import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
 import me.gallowsdove.foxymachines.listeners.SlimeWorldCompatListener;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
 
 
 public class ChunkLoader extends SlimefunItem {
@@ -47,15 +44,10 @@ public class ChunkLoader extends SlimefunItem {
                 Block b = e.getBlock();
                 String owner = BlockStorage.getLocationInfo(b.getLocation(), "owner");
                 if (owner != null) {
-                    NamespacedKey key = new NamespacedKey(FoxyMachines.getInstance(), "chunkloaders");
-                    Player p = Bukkit.getPlayer(UUID.fromString(owner));
-
-                    // The owner may be offline when another player breaks the loader.
-                    // Avoid the historical NPE; an online owner's placement count is
-                    // still updated exactly as before.
-                    if (p != null) {
-                        int current = p.getPersistentDataContainer().getOrDefault(key, PersistentDataType.INTEGER, 1);
-                        p.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, Math.max(0, current - 1));
+                    try {
+                        FoxyMachines.getInstance().getChunkLoaderQuotaService().release(UUID.fromString(owner));
+                    } catch (IllegalArgumentException ignored) {
+                        FoxyMachines.log(Level.WARNING, "Ignoring Chunk Loader with invalid owner data at " + b.getLocation());
                     }
 
                     b.getChunk().setForceLoaded(false);
