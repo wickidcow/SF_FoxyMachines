@@ -240,7 +240,7 @@ final class ItemSetup {
                     Items.VILE_PUMPKIN, null, null,
                     null, null, null,
                     null, null, null
-                    }, new PotionEffect[]{new PotionEffect(PotionEffectType.INSTANT_HEALTHTH_BOOST, 2700, 4, false, false)},
+                    }, new PotionEffect[]{new PotionEffect(PotionEffectType.HEALTH_BOOST, 2700, 4, false, false)},
                     6).register(FoxyMachines.getInstance());
             new SimpleMaterial(Items.BOSSES_ITEM_GROUP, Items.PIXIE_QUEEN_HEART, FoxyRecipeType.CUSTOM_MOB_DROP, new ItemStack[]{
                     null, null, null,
