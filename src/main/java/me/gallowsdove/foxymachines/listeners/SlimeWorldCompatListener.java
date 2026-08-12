@@ -1,56 +1,65 @@
 package me.gallowsdove.foxymachines.listeners;
 
-import me.gallowsdove.foxymachines.Items;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import org.bukkit.Location;
+import com.xzavier0722.mc.plugin.slimefun4.storage.event.SlimefunChunkDataLoadEvent;
+import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 
-import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Keeps FoxyMachines chunk loaders force-loaded across world/Slimefun data reloads.
+ *
+ * <p>Modern Slimefun storage no longer exposes BlockStorage#getRawStorage(World).
+ * Slimefun Legacy emits SlimefunChunkDataLoadEvent after a chunk's Slimefun block
+ * records have been restored, so this listener reapplies the force-load state at
+ * that boundary instead of scanning private/raw storage.</p>
+ */
 public class SlimeWorldCompatListener implements Listener {
+    private static final Set<ManagedChunk> MANAGED_CHUNKS = ConcurrentHashMap.newKeySet();
 
     @EventHandler
-    public void onWorldLoad(WorldLoadEvent e) {
-        reapplyChunkLoaders(e.getWorld());
+    public void onSlimefunChunkDataLoad(SlimefunChunkDataLoadEvent event) {
+        boolean containsChunkLoader = event.getChunkData().getAllBlockData().stream()
+                .anyMatch(data -> "CHUNK_LOADER".equals(data.getSfId()));
+
+        if (!containsChunkLoader) {
+            return;
+        }
+
+        Chunk chunk = event.getChunk();
+        chunk.setForceLoaded(true);
+        markManaged(chunk);
     }
 
     @EventHandler
-    public void onWorldUnload(WorldUnloadEvent e) {
-        clearChunkLoaders(e.getWorld());
-    }
+    public void onWorldUnload(WorldUnloadEvent event) {
+        World world = event.getWorld();
+        UUID worldId = world.getUID();
 
-    private void reapplyChunkLoaders(World world) {
-        Map<Location, ?> storage = BlockStorage.getRawStorage(world);
-        if (storage == null) return;
-
-        for (Location loc : storage.keySet()) {
-            try {
-                String id = BlockStorage.checkID(loc);
-                if (id != null && id.equals("CHUNK_LOADER")) {
-                    loc.getChunk().setForceLoaded(true);
-                }
-            } catch (Exception ignored) {
+        MANAGED_CHUNKS.removeIf(key -> {
+            if (!key.worldId().equals(worldId)) {
+                return false;
             }
-        }
-    }
 
-    private void clearChunkLoaders(World world) {
-        Map<Location, ?> storage = BlockStorage.getRawStorage(world);
-        if (storage == null) return;
-
-        for (Location loc : storage.keySet()) {
-            try {
-                String id = BlockStorage.checkID(loc);
-                if (id != null && id.equals("CHUNK_LOADER")) {
-                    loc.getChunk().setForceLoaded(false);
-                }
-            } catch (Exception ignored) {
+            if (world.isChunkLoaded(key.x(), key.z())) {
+                world.getChunkAt(key.x(), key.z()).setForceLoaded(false);
             }
-        }
+            return true;
+        });
     }
 
+    public static void markManaged(Chunk chunk) {
+        MANAGED_CHUNKS.add(new ManagedChunk(chunk.getWorld().getUID(), chunk.getX(), chunk.getZ()));
+    }
+
+    public static void unmarkManaged(Chunk chunk) {
+        MANAGED_CHUNKS.remove(new ManagedChunk(chunk.getWorld().getUID(), chunk.getX(), chunk.getZ()));
+    }
+
+    private record ManagedChunk(UUID worldId, int x, int z) {}
 }
