@@ -1,6 +1,7 @@
 package me.gallowsdove.foxymachines.listeners;
 
 import com.xzavier0722.mc.plugin.slimefun4.storage.event.SlimefunChunkDataLoadEvent;
+import me.gallowsdove.foxymachines.FoxyMachines;
 import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.event.EventHandler;
@@ -32,6 +33,12 @@ public class SlimeWorldCompatListener implements Listener {
         }
 
         Chunk chunk = event.getChunk();
+        if (!FoxyMachines.getInstance().getConfig().getBoolean("chunk-loaders-enabled")) {
+            chunk.setForceLoaded(false);
+            unmarkManaged(chunk);
+            return;
+        }
+
         chunk.setForceLoaded(true);
         markManaged(chunk);
     }
