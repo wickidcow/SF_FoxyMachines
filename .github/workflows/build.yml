@@ -1,0 +1,104 @@
+name: Build FoxyMachines Legacy
+
+on:
+  push:
+    branches:
+      - master
+      - codex/paper-26.2-slimefun-legacy
+    tags:
+      - 'v*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Paper 26.2 / Java 25
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build JAR
+        run: mvn -B -ntp clean package -DskipTests
+
+      - name: Locate output JAR
+        id: jar
+        shell: bash
+        run: |
+          JAR="$(find target -maxdepth 1 -type f -name 'SF_FoxyMachines_Legacy_v*.jar' ! -name 'original-*' | head -n 1)"
+          if [[ -z "$JAR" || ! -s "$JAR" ]]; then
+            echo "Expected FoxyMachines Legacy JAR was not produced."
+            find target -maxdepth 1 -type f -print || true
+            exit 1
+          fi
+          echo "path=$JAR" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$JAR")" >> "$GITHUB_OUTPUT"
+
+      - name: Verify JAR structure
+        shell: bash
+        run: |
+          jar tf "${{ steps.jar.outputs.path }}" >/dev/null
+          jar tf "${{ steps.jar.outputs.path }}" | grep -q '^plugin.yml$'
+          if jar tf "${{ steps.jar.outputs.path }}" | grep -q '^io/github/thebusybiscuit/slimefun4/'; then
+            echo "Slimefun core classes were accidentally bundled into the addon JAR."
+            exit 1
+          fi
+
+      # GitHub Actions artifact downloads are always ZIP containers.
+      # This CI copy is retained for build history, while the Release step below
+      # publishes the exact .jar file directly (no extra ZIP wrapper).
+      - name: Upload CI copy
+        uses: actions/upload-artifact@v4
+        with:
+          name: SF_FoxyMachines_Legacy
+          path: ${{ steps.jar.outputs.path }}
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Publish direct JAR release asset
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JAR_PATH: ${{ steps.jar.outputs.path }}
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            TITLE="$TAG"
+            PRERELEASE_FLAG=""
+          else
+            TAG="foxy-legacy-latest"
+            TITLE="FoxyMachines Legacy - Latest Build"
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$JAR_PATH" --clobber
+          else
+            gh release create "$TAG" "$JAR_PATH" \
+              --target "$GITHUB_SHA" \
+              --title "$TITLE" \
+              --notes "Paper 26.2 / Java 25 build for Slimefun Legacy. The attached file is the direct plugin JAR, not a ZIP archive." \
+              $PRERELEASE_FLAG
+          fi
+
+      - name: Build summary
+        shell: bash
+        run: |
+          echo "### FoxyMachines Legacy build" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Java: 25" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Paper target: 26.2+" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Runtime: Slimefun Legacy" >> "$GITHUB_STEP_SUMMARY"
+          echo "- JAR: \`${{ steps.jar.outputs.name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Direct unzipped JAR: published as a GitHub Release asset on master, tag, or manual builds." >> "$GITHUB_STEP_SUMMARY"
