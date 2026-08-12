@@ -75,7 +75,7 @@
                     <relocations>
                         <relocation>
                             <pattern>io.github.mooy1.infinitylib</pattern>
-                            <shadedPattern>me.gallowsdove.foxymachines.shaded.infinitylib</shadedPattern>
+                            <shadedPattern>me.gallowsdove.foxymachines.infinitylib</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>
