@@ -13,6 +13,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: foxymachines-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   LEGACY_ARTIFACT_VERSION: "1.0.1"
 
