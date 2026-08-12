@@ -4,7 +4,6 @@ import io.github.mooy1.infinitylib.common.Events;
 import io.github.mooy1.infinitylib.common.Scheduler;
 import io.github.mooy1.infinitylib.core.AbstractAddon;
 import io.github.mooy1.infinitylib.metrics.bukkit.Metrics;
-import io.github.thebusybiscuit.slimefun4.libraries.dough.updater.BlobBuildUpdater;
 import lombok.SneakyThrows;
 import me.gallowsdove.foxymachines.abstracts.AbstractWand;
 import me.gallowsdove.foxymachines.abstracts.CustomBoss;
@@ -31,7 +30,7 @@ public class FoxyMachines extends AbstractAddon {
     public String folderPath;
 
     public FoxyMachines() {
-        super ("GallowsDove", "FoxyMachines", "master", "auto-update");
+        super("wickidcow", "SF_FoxyMachines", "master", "auto-update");
     }
 
     @Override
@@ -75,10 +74,8 @@ public class FoxyMachines extends AbstractAddon {
         getAddonCommand().addSub(new KillallCommand()).addSub((new QuestCommand())).
                 addSub(new SacrificialAltarCommand()).addSub(new SummonCommand()).addSub(new ListallCommand());
 
-        if (getConfig().getBoolean("auto-update") && getDescription().getVersion().startsWith("Dev - ")) {
-            BlobBuildUpdater updater = new BlobBuildUpdater(this, this.getFile(), "FoxyMachines", "Dev");
-            updater.start();
-        }
+        // The legacy BlobBuildUpdater is intentionally disabled in this fork.
+        // Updates are built and distributed through this repository's GitHub Actions workflow.
     }
 
     @SneakyThrows
