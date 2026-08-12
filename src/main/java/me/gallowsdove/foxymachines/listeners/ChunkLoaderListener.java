@@ -62,6 +62,7 @@ public class ChunkLoaderListener implements Listener {
 
         p.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, i);
         b.getChunk().setForceLoaded(true);
+        SlimeWorldCompatListener.markManaged(b.getChunk());
         BlockStorage.addBlockInfo(b, "owner", p.getUniqueId().toString());
     }
 }
