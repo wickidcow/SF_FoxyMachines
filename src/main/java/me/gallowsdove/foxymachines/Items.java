@@ -83,7 +83,7 @@ public final class Items{
     );
 
     static {
-        ELECTRIC_WIND_STAFF.addUnsafeEnchantment(Enchantment.DURABILITY, 1);
+        ELECTRIC_WIND_STAFF.addUnsafeEnchantment(Enchantment.UNBREAKING, 1);
         ItemMeta meta = ELECTRIC_WIND_STAFF.getItemMeta();
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         ELECTRIC_WIND_STAFF.setItemMeta(meta);
@@ -99,7 +99,7 @@ public final class Items{
             "&c&o&8\u21E8 &e\u26A1 &70 / 100 J"
     );
     static {
-        ELECTRIC_FIRE_STAFF.addUnsafeEnchantment(Enchantment.DURABILITY, 1);
+        ELECTRIC_FIRE_STAFF.addUnsafeEnchantment(Enchantment.UNBREAKING, 1);
         ItemMeta meta = ELECTRIC_FIRE_STAFF.getItemMeta();
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         ELECTRIC_FIRE_STAFF.setItemMeta(meta);
@@ -115,7 +115,7 @@ public final class Items{
             "&c&o&8\u21E8 &e\u26A1 &70 / 200 J"
     );
     static {
-        ELECTRIC_FIRE_STAFF_II.addUnsafeEnchantment(Enchantment.DURABILITY, 1);
+        ELECTRIC_FIRE_STAFF_II.addUnsafeEnchantment(Enchantment.UNBREAKING, 1);
         ItemMeta meta = ELECTRIC_FIRE_STAFF_II.getItemMeta();
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         ELECTRIC_FIRE_STAFF_II.setItemMeta(meta);
@@ -407,7 +407,7 @@ public final class Items{
             "&7Can catch special items."
     );
     static {
-        POSEIDONS_FISHING_ROD.addUnsafeEnchantment(Enchantment.LUCK, 5);
+        POSEIDONS_FISHING_ROD.addUnsafeEnchantment(Enchantment.LUCK_OF_THE_SEA, 5);
         POSEIDONS_FISHING_ROD.addUnsafeEnchantment(Enchantment.LURE, 3);
     }
 
@@ -446,8 +446,8 @@ public final class Items{
             "&7Overheal"
     );
     static {
-        ELUCIDATOR.addUnsafeEnchantment(Enchantment.DAMAGE_ALL, 10);
-        ELUCIDATOR.addUnsafeEnchantment(Enchantment.LOOT_BONUS_MOBS, 5);
+        ELUCIDATOR.addUnsafeEnchantment(Enchantment.SHARPNESS, 10);
+        ELUCIDATOR.addUnsafeEnchantment(Enchantment.LOOTING, 5);
     }
 
     public static final SlimefunItemStack MAGIC_LUMP_4 = new SlimefunItemStack(
@@ -472,9 +472,9 @@ public final class Items{
             "&7Darkvision"
     );
     static {
-        AQUATIC_HELMET.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 5);
-        AQUATIC_HELMET.addUnsafeEnchantment(Enchantment.WATER_WORKER, 1);
-        AQUATIC_HELMET.addUnsafeEnchantment(Enchantment.OXYGEN, 5);
+        AQUATIC_HELMET.addUnsafeEnchantment(Enchantment.PROTECTION, 5);
+        AQUATIC_HELMET.addUnsafeEnchantment(Enchantment.AQUA_AFFINITY, 1);
+        AQUATIC_HELMET.addUnsafeEnchantment(Enchantment.RESPIRATION, 5);
         AQUATIC_HELMET.addUnsafeEnchantment(Enchantment.DEPTH_STRIDER, 5);
     }
 
@@ -487,7 +487,7 @@ public final class Items{
             "&7Regeneration I"
     );
     static {
-        RESISTANT_CHESTPLATE.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 5);
+        RESISTANT_CHESTPLATE.addUnsafeEnchantment(Enchantment.PROTECTION, 5);
     }
 
     public static final SlimefunItemStack FIERY_LEGGINGS = new SlimefunItemStack(
@@ -497,7 +497,7 @@ public final class Items{
             "&7Fire Aura II"
     );
     static {
-        FIERY_LEGGINGS.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 5);
+        FIERY_LEGGINGS.addUnsafeEnchantment(Enchantment.PROTECTION, 5);
         FIERY_LEGGINGS.addUnsafeEnchantment(Enchantment.THORNS, 6);
     }
 
@@ -510,8 +510,8 @@ public final class Items{
             "&7Lightweight"
     );
     static {
-        LIGHT_BOOTS.addUnsafeEnchantment(Enchantment.PROTECTION_ENVIRONMENTAL, 5);
-        LIGHT_BOOTS.addUnsafeEnchantment(Enchantment.PROTECTION_FALL, 5);
+        LIGHT_BOOTS.addUnsafeEnchantment(Enchantment.PROTECTION, 5);
+        LIGHT_BOOTS.addUnsafeEnchantment(Enchantment.FEATHER_FALLING, 5);
         LIGHT_BOOTS.addUnsafeEnchantment(Enchantment.SOUL_SPEED, 5);
     }
 
@@ -652,8 +652,8 @@ public final class Items{
             "&7Armor Piercing II"
     );
     static {
-        ACRI_ARCUM.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE, 7);
-        ACRI_ARCUM.addUnsafeEnchantment(Enchantment.ARROW_INFINITE, 1);
+        ACRI_ARCUM.addUnsafeEnchantment(Enchantment.POWER, 7);
+        ACRI_ARCUM.addUnsafeEnchantment(Enchantment.INFINITY, 1);
     }
 
     public static final SlimefunItemStack GHOST_BLOCK_REMOVER = new SlimefunItemStack(

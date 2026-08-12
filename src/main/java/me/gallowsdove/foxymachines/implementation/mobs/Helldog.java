@@ -26,7 +26,7 @@ public class Helldog extends CustomMob {
 
         wolf.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 999999999, 1, false, false));
         wolf.setFireTicks(999999999);
-        wolf.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(26);
+        wolf.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(26);
         wolf.setRemoveWhenFarAway(true);
         wolf.setAngry(true);
         wolf.setCollarColor(DyeColor.RED);

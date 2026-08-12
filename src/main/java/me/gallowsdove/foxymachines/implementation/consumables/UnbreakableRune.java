@@ -56,7 +56,7 @@ public class UnbreakableRune extends SimpleSlimefunItem<ItemDropHandler> {
     public UnbreakableRune() {
         super(Items.TOOLS_ITEM_GROUP, Items.UNBREAKABLE_RUNE, RecipeType.ANCIENT_ALTAR, new ItemStack[] {
                 Items.DAMIENIUM, Items.MAGIC_LUMP_5, Items.DAMIENIUM,
-                SlimefunItems.ESSENCE_OF_AFTERLIFE, SlimefunItems.LIGHTNING_RUNE , SlimefunItems.ESSENCE_OF_AFTERLIFE,
+                SlimefunItems.ESSENCE_OF_AFTERLIFE, SlimefunItems.LIGHTNING_RUNE, SlimefunItems.ESSENCE_OF_AFTERLIFE,
                 Items.DAMIENIUM, Items.MAGIC_LUMP_5, Items.DAMIENIUM
         });
     }
@@ -66,13 +66,11 @@ public class UnbreakableRune extends SimpleSlimefunItem<ItemDropHandler> {
     public ItemDropHandler getItemHandler() {
         return (e, p, item) -> {
             if (isItem(item.getItemStack())) {
-
-                if (!SlimefunUtils.canPlayerUseItem(p, Items.UNBREAKABLE_RUNE , true)) {
+                if (!SlimefunUtils.canPlayerUseItem(p, Items.UNBREAKABLE_RUNE, true)) {
                     return true;
                 }
 
                 Scheduler.run(20, () -> activate(p, item));
-
                 return true;
             }
             return false;
@@ -90,21 +88,18 @@ public class UnbreakableRune extends SimpleSlimefunItem<ItemDropHandler> {
 
         if (optional.isPresent()) {
             Item item = (Item) optional.get();
-            ItemStack itemStack = item.getItemStack();
+            ItemStack itemStack = item.getItemStack().clone();
 
             if (itemStack.getAmount() == 1) {
                 l.getWorld().strikeLightningEffect(l);
 
                 Scheduler.run(10, () -> {
-                    if (rune.isValid() && item.isValid() && itemStack.getAmount() == 1) {
-
+                    if (rune.isValid() && item.isValid() && itemStack.getAmount() == 1 && setUnbreakable(itemStack)) {
                         l.getWorld().createExplosion(l, 0);
                         l.getWorld().playSound(l, Sound.ENTITY_GENERIC_EXPLODE, 0.3F, 1);
 
                         item.remove();
                         rune.remove();
-
-                        setUnbreakable(itemStack);
                         l.getWorld().dropItemNaturally(l, itemStack);
 
                         p.sendMessage(ChatColor.LIGHT_PURPLE + "Your item is now Unbreakable.");
@@ -127,28 +122,28 @@ public class UnbreakableRune extends SimpleSlimefunItem<ItemDropHandler> {
         return false;
     }
 
-    public static void setUnbreakable(@Nullable ItemStack item) {
-        if (item != null && item.getType() != Material.AIR) {
-
-            if (!isUnbreakable(item) && item.hasItemMeta()) {
-                ItemMeta meta = item.getItemMeta();
-
-                meta.setUnbreakable(true);
-                item.setItemMeta(meta);
-            }
+    public static boolean setUnbreakable(@Nullable ItemStack item) {
+        if (item == null || item.getType().isAir() || isUnbreakable(item)) {
+            return false;
         }
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return false;
+        }
+
+        meta.setUnbreakable(true);
+        item.setItemMeta(meta);
+        return true;
     }
 
     public static boolean isUnbreakable(@Nullable ItemStack item) {
-        if (item != null && item.getType() != Material.AIR) {
-            if (item.hasItemMeta()) {
-                return item.getItemMeta().isUnbreakable();
-            } else {
-                return false;
-            }
-        } else {
+        if (item == null || item.getType() == Material.AIR) {
             return false;
         }
+
+        ItemMeta meta = item.getItemMeta();
+        return meta != null && meta.isUnbreakable();
     }
 
     public static boolean isDisallowed(Player player, ItemStack itemStack) {

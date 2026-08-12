@@ -57,7 +57,7 @@ public class HeadlessHorseman extends CustomBoss {
         equipment.setArmorContents(new ItemStack[] { new ItemStack(Material.NETHERITE_BOOTS), new ItemStack(Material.NETHERITE_LEGGINGS),
                 new ItemStack(Material.NETHERITE_CHESTPLATE), new ItemStack(Material.CARVED_PUMPKIN) });
 
-        spawned.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(28);
+        spawned.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(28);
         spawned.getPersistentDataContainer().set(PATTERN_KEY, PersistentDataType.SHORT, AttackPattern.LIGHTNING);
     }
 
@@ -91,7 +91,7 @@ public class HeadlessHorseman extends CustomBoss {
         } else if (pattern < 5) {
             pattern = AttackPattern.SHOOT;
             if (mob.getVehicle() instanceof LivingEntity vehicle) {
-                vehicle.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 100, 100));
+                vehicle.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 100));
             }
         } else {
             pattern = AttackPattern.SUMMON;
@@ -168,10 +168,11 @@ public class HeadlessHorseman extends CustomBoss {
                     return;
                 }
 
-                EntityDamageEvent event = new EntityDamageEvent(player, DamageCause.CUSTOM, 12);
-                Bukkit.getServer().getPluginManager().callEvent(event);
-                if (!event.isCancelled()) {
-                    player.damage(12.4);
+                EntityDamageEvent previousDamageEvent = player.getLastDamageCause();
+                player.damage(12.4);
+                EntityDamageEvent damageEvent = player.getLastDamageCause();
+                if (damageEvent != null && damageEvent != previousDamageEvent && !damageEvent.isCancelled()
+                        && damageEvent.getFinalDamage() > 0) {
                     Utils.dealDamageBypassingArmor(player, 1.72);
                 }
             });

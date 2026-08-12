@@ -47,7 +47,7 @@ public class PixieQueen extends CustomBoss {
 
         spawned.setGlowing(true);
 
-        spawned.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(28);
+        spawned.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(28);
         spawned.getPersistentDataContainer().set(PATTERN_KEY, PersistentDataType.SHORT, AttackPattern.CHARGE);
     }
 
@@ -80,7 +80,7 @@ public class PixieQueen extends CustomBoss {
             pattern = AttackPattern.CHARGE;
         } else if (pattern < 4) {
             pattern = AttackPattern.SHOOT;
-            mob.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 100, 100));
+            mob.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 100));
         } else if (pattern < 6) {
             pattern = AttackPattern.SUMMON;
         } else {
@@ -173,7 +173,7 @@ public class PixieQueen extends CustomBoss {
         }
 
         for (int i = 0; i < 10; i++) {
-            location.getWorld().spawnParticle(Particle.VILLAGER_HAPPY, location, 1, random.nextDouble(-1.5, 1.5),
+            location.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, location, 1, random.nextDouble(-1.5, 1.5),
                     random.nextDouble(-1.2, 2.4), random.nextDouble(-1.5, 1.5), 0);
         }
     }

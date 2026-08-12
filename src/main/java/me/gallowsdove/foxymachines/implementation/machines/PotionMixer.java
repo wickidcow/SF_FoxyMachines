@@ -31,7 +31,6 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
@@ -217,123 +216,17 @@ public class PotionMixer extends SlimefunItem implements EnergyNetComponent {
     }
 
     @Nonnull
-    protected PotionEffect[] getCustomEffectsFromBaseData(PotionData potionData, boolean lingering) {
-        PotionType type = potionData.getType();
-        boolean extended = potionData.isExtended();
-        boolean upgraded = potionData.isUpgraded();
-        int d = 1;
-        if (lingering){
-            d = 4;
+    protected PotionEffect[] getCustomEffectsFromBaseType(@Nullable PotionType type, boolean lingering) {
+        if (type == null) {
+            return new PotionEffect[0];
         }
-        switch (type) {
-            case FIRE_RESISTANCE:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 8*60*20/d, 0)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 3*60*20/d, 0)};
-                }
-            case INSTANT_DAMAGE:
-                if (upgraded) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.HARM, 0, 1)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.HARM, 0, 0)};
-                }
-            case INSTANT_HEAL:
-                if (upgraded) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.HEAL, 0, 1)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.HEAL, 0, 0)};
-                }
-            case INVISIBILITY:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.INVISIBILITY, 8*60*20/d, 0)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.INVISIBILITY, 3*60*20/d, 0)};
-                }
-            case JUMP:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.JUMP, 8*60*20/d, 0)};
-                } else if (upgraded) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.JUMP, 90*20/d, 1)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.JUMP, 3*60*20/d, 0)};
-                }
-            case LUCK:
-                return new PotionEffect[] {new PotionEffect(PotionEffectType.LUCK, 5*60*20/d, 0)};
-            case NIGHT_VISION:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.NIGHT_VISION, 8*60*20/d, 0)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.NIGHT_VISION, 3*60*20/d, 0)};
-                }
-            case POISON:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.POISON, 45*20/d, 0)};
-                } else if (upgraded) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.POISON, 21*20/d, 1)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.POISON, 90*20/d, 0)};
-                }
-            case REGEN:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.REGENERATION, 45*20/d, 0)};
-                } else if (upgraded) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.REGENERATION, 22*20/d, 1)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.REGENERATION, 90*20/d, 0)};
-                }
-            case SLOW_FALLING:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.SLOW_FALLING, 4*60*20/d, 0)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.SLOW_FALLING, 90*20/d, 0)};
-                }
-            case SLOWNESS:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.SLOW, 4*60*20/d, 0)};
-                } else if (upgraded) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.SLOW, 20*20/d, 3)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.SLOW, 90*20/d, 0)};
-                }
-            case SPEED:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.SPEED, 8*60*20/d, 0)};
-                } else if (upgraded) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.SPEED, 90*20/d, 1)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.SPEED, 3*60*20/d, 0)};
-                }
-            case STRENGTH:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.INCREASE_DAMAGE, 8*60*20/d, 0)};
-                } else if (upgraded) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.INCREASE_DAMAGE, 90*20/d, 1)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.INCREASE_DAMAGE, 3*60*20/d, 0)};
-                }
-            case TURTLE_MASTER:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.SLOW, 40*20/d, 3), new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 40*20/d, 2)};
-                } else if (upgraded) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.SLOW, 20*20/d, 5), new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20*20/d, 3)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.SLOW, 20*20/d, 3), new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20*20/d, 2)};
-                }
-            case WATER_BREATHING:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.WATER_BREATHING, 8*60*20/d, 0)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.WATER_BREATHING, 3*60*20/d, 0)};
-                }
-            case WEAKNESS:
-                if (extended) {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.WEAKNESS, 4*60*20/d, 0)};
-                } else {
-                    return new PotionEffect[] {new PotionEffect(PotionEffectType.WEAKNESS, 90*20/d, 0)};
-                }
-        }
-        return new PotionEffect[] {};
+
+        int durationDivisor = lingering ? 4 : 1;
+        return type.getPotionEffects().stream()
+                .map(effect -> durationDivisor == 1
+                        ? effect
+                        : effect.withDuration(Math.max(1, effect.getDuration() / durationDivisor)))
+                .toArray(PotionEffect[]::new);
     }
 
     @Nullable
@@ -375,11 +268,11 @@ public class PotionMixer extends SlimefunItem implements EnergyNetComponent {
                     potionMeta.addCustomEffect(potion2Effects.get(i), true);
                 }
 
-                for (PotionEffect effect : getCustomEffectsFromBaseData(potionMeta.getBasePotionData(), lingering)) {
+                for (PotionEffect effect : getCustomEffectsFromBaseType(potionMeta.getBasePotionType(), lingering)) {
                     potionMeta.addCustomEffect(effect, false);
                 }
 
-                for (PotionEffect effect : getCustomEffectsFromBaseData(potion2Meta.getBasePotionData(), lingering)) {
+                for (PotionEffect effect : getCustomEffectsFromBaseType(potion2Meta.getBasePotionType(), lingering)) {
                     for (PotionEffect effect2 : potionMeta.getCustomEffects()) {
                         if (effect.getType() == effect2.getType()) {
                             if (effect.getAmplifier() > effect2.getAmplifier()) {
@@ -394,7 +287,7 @@ public class PotionMixer extends SlimefunItem implements EnergyNetComponent {
                 List<String> lore = new ArrayList<>() {{
                     add("Not usable in Brewing Stand");
                 }};
-                potionMeta.setBasePotionData(new PotionData(PotionType.UNCRAFTABLE, false, false));
+                potionMeta.setBasePotionType(PotionType.WATER);
                 switch (potion1.getType()) {
                     case POTION -> potionMeta.setDisplayName(ChatColor.AQUA + "Combined Potion");
                     case LINGERING_POTION -> {

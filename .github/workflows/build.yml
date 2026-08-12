@@ -1,0 +1,134 @@
+name: Build FoxyMachines Legacy
+
+on:
+  push:
+    branches:
+      - master
+      - codex/paper-26.2-slimefun-legacy
+    tags:
+      - 'v*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: foxymachines-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LEGACY_ARTIFACT_VERSION: "1.0.1"
+
+jobs:
+  build:
+    name: Paper 26.2 / Java 25
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Verify Paper 26.2 source migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/port-paper-26.2.py
+          if ! git diff --quiet -- src/main/java; then
+            echo "Paper 26.2 migration changed source files. Commit the migration output before building."
+            git diff -- src/main/java
+            exit 1
+          fi
+
+          if grep -R --line-number -E \
+            'TeleportCause\.CHORUS_FRUIT|Effect\.(STEP_SOUND|SMOKE)\b|new EntityDamageEvent\([^;]*DamageCause\.CUSTOM' \
+            src/main/java; then
+            echo "Removed or removal-pending Paper API usage is still present."
+            exit 1
+          fi
+
+      - name: Build JAR
+        run: mvn -B -ntp clean package -DskipTests
+
+      - name: Stage versioned Legacy JAR
+        id: jar
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          mapfile -t jars < <(find target -maxdepth 1 -type f -name 'SF_FoxyMachines_Legacy_v*.jar' ! -name 'original-*')
+          test "${#jars[@]}" -eq 1
+          OUTPUT="dist/SF_FoxyMachines_Legacy_v${LEGACY_ARTIFACT_VERSION}.jar"
+          cp "${jars[0]}" "$OUTPUT"
+          test -s "$OUTPUT"
+          echo "path=$OUTPUT" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$OUTPUT")" >> "$GITHUB_OUTPUT"
+          sha256sum "$OUTPUT"
+
+      - name: Verify JAR structure and InfinityLib relocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR="${{ steps.jar.outputs.path }}"
+          jar tf "$JAR" >/dev/null
+          jar tf "$JAR" | grep -q '^plugin.yml$'
+
+          if jar tf "$JAR" | grep -q '^io/github/thebusybiscuit/slimefun4/'; then
+            echo "Slimefun core classes were accidentally bundled into the addon JAR."
+            exit 1
+          fi
+
+          if jar tf "$JAR" | grep -q '^io/github/mooy1/infinitylib/'; then
+            echo "InfinityLib was not relocated."
+            exit 1
+          fi
+
+          if jar tf "$JAR" | grep -q '^me/gallowsdove/foxymachines/shaded/infinitylib/'; then
+            echo "InfinityLib is under an invalid addon package and would fail AbstractAddon validation."
+            exit 1
+          fi
+
+          jar tf "$JAR" | grep -q '^me/gallowsdove/foxymachines/infinitylib/core/AbstractAddon.class$'
+          jar tf "$JAR" | grep -q '^me/gallowsdove/foxymachines/infinitylib/InfinityLib.class$'
+          echo "InfinityLib relocation matches FoxyMachines package requirements."
+
+      - name: Upload direct versioned Legacy JAR
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/SF_FoxyMachines_Legacy_v${{ env.LEGACY_ARTIFACT_VERSION }}.jar
+          archive: false
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish direct JAR release asset
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="$GITHUB_REF_NAME"
+          JAR="dist/SF_FoxyMachines_Legacy_v${LEGACY_ARTIFACT_VERSION}.jar"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$JAR" --clobber
+          else
+            gh release create "$TAG" "$JAR" --generate-notes --title "FoxyMachines Legacy $TAG"
+          fi
+
+      - name: Build summary
+        shell: bash
+        run: |
+          echo "### FoxyMachines Legacy build" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Version: ${LEGACY_ARTIFACT_VERSION}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Java: 25" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Paper target: 26.2+" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Runtime: Slimefun Legacy" >> "$GITHUB_STEP_SUMMARY"
+          echo "- JAR: \`${{ steps.jar.outputs.name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Actions output: direct JAR artifact (archive disabled; no ZIP wrapper)." >> "$GITHUB_STEP_SUMMARY"

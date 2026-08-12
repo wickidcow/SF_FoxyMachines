@@ -4,6 +4,9 @@
 # gps-complexity-per-loader: default: 7500
 # The GPS complexity required for each chunk loader
 #
+# chunk-loaders-enabled: default: true
+# Set to false to keep registered Chunk Loader blocks intact without allowing them to force-load chunks.
+#
 # ghost-blocks: default: true
 # Setting this to false will disable all Ghost Blocks without having to edit items.yml
 #
@@ -37,9 +40,10 @@
 # Any items from addons to blacklist from being usable with the unbreakable rune
 # for ex, by default the strainers from InfinityExpansion are disabled as they do not respect the unbreakable setting
 
-auto-update: true
+auto-update: false
 max-chunk-loaders: 8
 gps-complexity-per-loader: 7500
+chunk-loaders-enabled: true
 ghost-blocks: true
 custom-mobs: true
 max-fill-wand-blocks: 4096

@@ -1,5 +1,7 @@
 package me.gallowsdove.foxymachines.implementation.multiblock;
 
+import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
+import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.core.handlers.BlockBreakHandler;
@@ -34,7 +36,6 @@ public class SacrificialAltarPressurePlate extends SlimefunItem {
 
     private BlockPlaceHandler onPlace() {
         return new BlockPlaceHandler(false) {
-
             @Override
             public void onPlayerPlace(@Nonnull BlockPlaceEvent e) {
                 Block b = e.getBlockPlaced();
@@ -52,7 +53,8 @@ public class SacrificialAltarPressurePlate extends SlimefunItem {
     private BlockUseHandler onUse() {
         return e -> {
             Block b = e.getClickedBlock().get();
-            if (BlockStorage.getLocationInfo(b.getLocation(), "complete").equals("false")) {
+            String complete = BlockStorage.getLocationInfo(b.getLocation(), "complete");
+            if ("false".equals(complete)) {
                 if (isComplete(b)) {
                     BlockStorage.addBlockInfo(b, "complete", "true");
                     e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "The Sacrificial Altar has been activated.");
@@ -78,11 +80,10 @@ public class SacrificialAltarPressurePlate extends SlimefunItem {
     }
 
     private boolean isComplete(@Nonnull Block b) {
-
         if (b.getRelative(1, 1, 1).getType() != Material.POLISHED_BLACKSTONE_BRICK_STAIRS || !isAltarPiece(b.getRelative(1, 1, 1)) ||
                 b.getRelative(-1, 1, 1).getType() != Material.POLISHED_BLACKSTONE_BRICK_STAIRS || !isAltarPiece(b.getRelative(-1, 1, 1)) ||
                 b.getRelative(1, 1, -1).getType() != Material.POLISHED_BLACKSTONE_BRICK_STAIRS || !isAltarPiece(b.getRelative(1, 1, -1)) ||
-            b.getRelative(-1, 1, -1).getType() != Material.POLISHED_BLACKSTONE_BRICK_STAIRS || !isAltarPiece(b.getRelative(-1, 1, -1))) {
+                b.getRelative(-1, 1, -1).getType() != Material.POLISHED_BLACKSTONE_BRICK_STAIRS || !isAltarPiece(b.getRelative(-1, 1, -1))) {
             return false;
         }
 
@@ -119,12 +120,16 @@ public class SacrificialAltarPressurePlate extends SlimefunItem {
     }
 
     private boolean isAltarPiece(@Nonnull Block b) {
-        if (BlockStorage.getLocationInfo(b.getLocation(), "id") == null) {
+        SlimefunBlockData blockData = StorageCacheUtils.getBlock(b.getLocation());
+        if (blockData == null) {
             return false;
         }
 
-        return switch (BlockStorage.getLocationInfo(b.getLocation(), "id")) {
-            case "SACRIFICIAL_ALTAR_BLACKSTONE_BRICKS", "SACRIFICIAL_ALTAR_BLACKSTONE_BRICK_WALL", "SACRIFICIAL_ALTAR_BLACKSTONE_BRICK_STAIRS", "SACRIFICIAL_ALTAR_SOUL_TORCH" -> true;
+        return switch (blockData.getSfId()) {
+            case "SACRIFICIAL_ALTAR_BLACKSTONE_BRICKS",
+                    "SACRIFICIAL_ALTAR_BLACKSTONE_BRICK_WALL",
+                    "SACRIFICIAL_ALTAR_BLACKSTONE_BRICK_STAIRS",
+                    "SACRIFICIAL_ALTAR_SOUL_TORCH" -> true;
             default -> false;
         };
     }
