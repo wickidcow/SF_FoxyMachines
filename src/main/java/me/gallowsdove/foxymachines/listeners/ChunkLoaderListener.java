@@ -33,6 +33,12 @@ public class ChunkLoaderListener implements Listener {
             return;
         }
 
+        if (!FoxyMachines.getInstance().getConfig().getBoolean("chunk-loaders-enabled")) {
+            e.setCancelled(true);
+            p.sendMessage(ChatColor.RED + "Chunk Loaders are currently disabled by the server.");
+            return;
+        }
+
         Block b = e.getBlockPlaced();
         if (b.getChunk().isForceLoaded()) {
             e.setCancelled(true);
