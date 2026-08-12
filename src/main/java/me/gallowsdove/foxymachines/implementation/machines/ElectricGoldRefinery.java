@@ -78,7 +78,7 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
                 for (int i = 0; i < 12; i++) {
                     final int recipeIndex = i;
                     menu.addMenuClickHandler(GOLD_INDEXES[recipeIndex], (p, slot, item, action) -> {
-                        var container = StorageCacheUtils.getDataContainer(b.getLocation());
+                        var container = StorageCacheUtils.getBlock(b.getLocation());
                         if (container == null) {
                             return false;
                         }
@@ -91,7 +91,7 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
                     });
                 }
 
-                var container = StorageCacheUtils.getDataContainer(b.getLocation());
+                var container = StorageCacheUtils.getBlock(b.getLocation());
                 if (container == null) {
                     showNoRecipe(menu, "&7Block data is not available yet");
                     return;
