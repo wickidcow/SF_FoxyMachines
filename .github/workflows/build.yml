@@ -29,22 +29,15 @@ jobs:
           java-version: '25'
           cache: maven
 
-      - name: Apply Paper 26.2 source migration
-        run: python3 .github/scripts/port-paper-26.2.py
-
-      - name: Commit source migration to compatibility branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/codex/paper-26.2-slimefun-legacy' && github.actor != 'github-actions[bot]'
+      - name: Verify Paper 26.2 source migration
         shell: bash
         run: |
-          if git diff --quiet -- src/main/java; then
-            echo "Source is already modernized for Paper 26.2."
-            exit 0
+          python3 .github/scripts/port-paper-26.2.py
+          if ! git diff --quiet -- src/main/java; then
+            echo "Paper 26.2 migration changed source files. Commit the migration output before building."
+            git diff -- src/main/java
+            exit 1
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/main/java
-          git commit -m "compat: migrate Bukkit APIs for Paper 26.2"
-          git push origin HEAD:codex/paper-26.2-slimefun-legacy
 
       - name: Build JAR
         run: mvn -B -ntp clean package -DskipTests
