@@ -1,58 +1,59 @@
-name: Build (Maven)
+name: Build FoxyMachines Legacy
 
 on:
   push:
-    branches:
-      - master
-      - main
+    branches: [master, main]
+    tags: ['v*']
   pull_request:
-    branches:
-      - master
-      - main
+    branches: [master, main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 env:
-  LEGACY_ARTIFACT_VERSION: "1.0.0"
+  LEGACY_VERSION: "1.0.0"
+  SOURCE_ARTIFACT: "SF_FoxyMachines_Legacy_v1.0.0.jar"
+  OUTPUT_NAME: "SF_FoxyMachines1.0.0.jar"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '25'
           cache: maven
-
-      - name: Verify Maven wrapper (if present)
-        run: |
-          if [ -f ./mvnw ]; then
-            chmod +x mvnw
-          fi
-
       - name: Build with Maven
         run: mvn -B clean package
-
-      - name: Verify final JAR
+      - name: Stage versioned JAR
         shell: bash
         run: |
-          JAR="target/SF_FoxyMachines_Legacy_v${LEGACY_ARTIFACT_VERSION}.jar"
+          set -euo pipefail
+          mkdir -p dist
+          JAR="target/${SOURCE_ARTIFACT}"
           test -s "$JAR"
-          jar tf "$JAR" | grep -Fq 'plugin.yml'
-          unzip -p "$JAR" plugin.yml | grep -Fq "version: ${LEGACY_ARTIFACT_VERSION}"
-
-      - name: Upload direct versioned Legacy JAR
+          cp "$JAR" "dist/${OUTPUT_NAME}"
+          jar tf "dist/${OUTPUT_NAME}" | grep -Fq 'plugin.yml'
+          sha256sum "dist/${OUTPUT_NAME}"
+      - name: Upload CI artifact
         uses: actions/upload-artifact@v7
         with:
-          path: target/SF_FoxyMachines_Legacy_v${{ env.LEGACY_ARTIFACT_VERSION }}.jar
-          archive: false
+          name: SF_FoxyMachines${{ env.LEGACY_VERSION }}
+          path: dist/${{ env.OUTPUT_NAME }}
           if-no-files-found: error
           retention-days: 30
+      - name: Publish raw JAR release asset
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v${LEGACY_VERSION}"; fi
+          JAR="dist/${OUTPUT_NAME}"
+          if gh release view "$TAG" >/dev/null 2>&1; then gh release upload "$TAG" "$JAR" --clobber; else gh release create "$TAG" "$JAR" --target "$GITHUB_SHA" --generate-notes --title "SF_FoxyMachines $TAG"; fi
