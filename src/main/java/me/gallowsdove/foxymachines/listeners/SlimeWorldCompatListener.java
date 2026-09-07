@@ -8,6 +8,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,15 +55,35 @@ public class SlimeWorldCompatListener implements Listener {
     }
 
     /**
-     * Original Slimefun exposed BlockStorage#getRawStorage(World). Slimefun Legacy uses the
-     * newer BlockDataController instead. Keep the old call for upstream compatibility and
-     * transparently fall back to the Legacy controller when that binary API is unavailable.
+     * Original Slimefun exposed BlockStorage#getRawStorage(World). Newer Slimefun cores do not.
+     * Resolve the old API reflectively so this source still compiles when that method is absent,
+     * then fall back to the newer block-data controller used by Slimefun Legacy.
      */
     private Map<Location, ?> getRawStorageCompat(World world) {
+        Map<Location, Object> originalStorage = getOriginalRawStorage(world);
+        if (originalStorage != null) {
+            return originalStorage;
+        }
+        return getLegacyRawStorage(world);
+    }
+
+    private Map<Location, Object> getOriginalRawStorage(World world) {
         try {
-            return BlockStorage.getRawStorage(world);
-        } catch (NoSuchMethodError ignored) {
-            return getLegacyRawStorage(world);
+            Method method = BlockStorage.class.getMethod("getRawStorage", World.class);
+            Object value = method.invoke(null, world);
+            if (!(value instanceof Map<?, ?> raw)) {
+                return null;
+            }
+
+            Map<Location, Object> storage = new HashMap<>();
+            for (Map.Entry<?, ?> entry : raw.entrySet()) {
+                if (entry.getKey() instanceof Location location) {
+                    storage.put(location, entry.getValue());
+                }
+            }
+            return storage;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return null;
         }
     }
 
@@ -95,7 +116,7 @@ public class SlimeWorldCompatListener implements Listener {
                 }
             }
         } catch (ReflectiveOperationException | LinkageError ignored) {
-            // If neither storage API is available, leave this optional compatibility feature inactive.
+            // Optional compatibility feature: if neither storage API exists, do nothing.
         }
 
         return storage;
