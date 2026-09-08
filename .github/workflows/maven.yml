@@ -15,22 +15,71 @@ env:
   LEGACY_VERSION: "1.0.0"
   SOURCE_ARTIFACT: "SF_FoxyMachines_Legacy_v1.0.0.jar"
   OUTPUT_NAME: "SF_FoxyMachines1.0.0.jar"
+  SLIMEFUN_LEGACY_VERSION: "4.1.46"
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
       - name: Set up Java 25
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
           cache: maven
-      - name: Build with Maven
-        run: mvn -B clean package
-      - name: Stage versioned JAR
+
+      - name: Install Slimefun Legacy 4.1.46 into local Maven repo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p legacy-deps
+          gh release download "v${SLIMEFUN_LEGACY_VERSION}" \
+            --repo wickidcow/Slimefun-Legacy \
+            --pattern "Slimefun-Legacy${SLIMEFUN_LEGACY_VERSION}.jar" \
+            --dir legacy-deps
+          LEGACY_JAR="legacy-deps/Slimefun-Legacy${SLIMEFUN_LEGACY_VERSION}.jar"
+          test -s "$LEGACY_JAR"
+          mvn -B install:install-file \
+            -Dfile="$LEGACY_JAR" \
+            -DgroupId=com.github.wickidcow \
+            -DartifactId=Slimefun-Legacy \
+            -Dversion="${SLIMEFUN_LEGACY_VERSION}" \
+            -Dpackaging=jar \
+            -DgeneratePom=true
+
+      - name: Compile against Slimefun Legacy 4.1.46 / Paper 1.21.11
+        run: >-
+          mvn -B -Dmaven.test.skip=true
+          -Dpaper.version=1.21.11-R0.1-SNAPSHOT
+          -Dslimefun.groupId=com.github.wickidcow
+          -Dslimefun.artifactId=Slimefun-Legacy
+          -Dslimefun.version=${SLIMEFUN_LEGACY_VERSION}
+          clean package
+
+      - name: Compile against Slimefun Legacy 4.1.46 / Paper 26.2
+        run: >-
+          mvn -B -Dmaven.test.skip=true
+          -Dpaper.version=26.2.build.111-stable
+          -Dslimefun.groupId=com.github.wickidcow
+          -Dslimefun.artifactId=Slimefun-Legacy
+          -Dslimefun.version=${SLIMEFUN_LEGACY_VERSION}
+          clean package
+
+      - name: Build release JAR against primary Paper 26.2 target
+        run: >-
+          mvn -B -Dmaven.test.skip=true
+          -Dpaper.version=26.2.build.111-stable
+          -Dslimefun.groupId=com.github.wickidcow
+          -Dslimefun.artifactId=Slimefun-Legacy
+          -Dslimefun.version=${SLIMEFUN_LEGACY_VERSION}
+          clean package
+
+      - name: Stage and validate versioned JAR
         shell: bash
         run: |
           set -euo pipefail
@@ -38,14 +87,22 @@ jobs:
           JAR="target/${SOURCE_ARTIFACT}"
           test -s "$JAR"
           cp "$JAR" "dist/${OUTPUT_NAME}"
-          jar tf "dist/${OUTPUT_NAME}" | grep -Fq 'plugin.yml'
-          sha256sum "dist/${OUTPUT_NAME}"
+          JAR="dist/${OUTPUT_NAME}"
+          jar tf "$JAR" | grep -Fq 'plugin.yml'
+          javap -verbose -classpath "$JAR" me.gallowsdove.foxymachines.FoxyMachines | grep -Fq 'major version: 65'
+          if jar tf "$JAR" | grep -q '^io/github/thebusybiscuit/slimefun4/'; then
+            echo 'Slimefun core classes must not be shaded into FoxyMachines.' >&2
+            exit 1
+          fi
+          sha256sum "$JAR"
+
       - name: Upload raw JAR artifact
         uses: actions/upload-artifact@v7
         with:
           path: dist/${{ env.OUTPUT_NAME }}
           archive: false
           if-no-files-found: error
+
       - name: Publish raw JAR release asset
         if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || github.ref_name == github.event.repository.default_branch
         env:
@@ -55,4 +112,9 @@ jobs:
           set -euo pipefail
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v${LEGACY_VERSION}"; fi
           JAR="dist/${OUTPUT_NAME}"
-          if gh release view "$TAG" >/dev/null 2>&1; then gh release upload "$TAG" "$JAR" --clobber; else gh release create "$TAG" "$JAR" --target "$GITHUB_SHA" --generate-notes --title "SF_FoxyMachines $TAG"; fi
+          NOTES="Slimefun Legacy compatibility build. Compiled directly against Slimefun Legacy ${SLIMEFUN_LEGACY_VERSION} on Paper 1.21.11 and Paper 26.2, verified as Java 21 bytecode, and checked to exclude shaded Slimefun core classes."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$JAR" --clobber
+          else
+            gh release create "$TAG" "$JAR" --target "$GITHUB_SHA" --notes "$NOTES" --title "SF_FoxyMachines $TAG"
+          fi
