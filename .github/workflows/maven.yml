@@ -12,9 +12,9 @@ permissions:
   contents: write
 
 env:
-  LEGACY_VERSION: "1.0.0"
-  SOURCE_ARTIFACT: "SF_FoxyMachines_Legacy_v1.0.0.jar"
-  OUTPUT_NAME: "SF_FoxyMachines1.0.0.jar"
+  LEGACY_VERSION: "1.0.1"
+  SOURCE_ARTIFACT: "SF_FoxyMachines_Legacy_v1.0.1.jar"
+  OUTPUT_NAME: "SF_FoxyMachines1.0.1.jar"
   SLIMEFUN_LEGACY_VERSION: "4.1.46"
 
 jobs:
@@ -51,6 +51,15 @@ jobs:
             -Dversion="${SLIMEFUN_LEGACY_VERSION}" \
             -Dpackaging=jar \
             -DgeneratePom=true
+
+      - name: Run Maven test lifecycle against Paper 26.2 and Slimefun Legacy
+        run: >-
+          mvn -B
+          -Dpaper.version=26.2.build.111-stable
+          -Dslimefun.groupId=com.github.wickidcow
+          -Dslimefun.artifactId=Slimefun-Legacy
+          -Dslimefun.version=${SLIMEFUN_LEGACY_VERSION}
+          clean test
 
       - name: Compile against Slimefun Legacy 4.1.46 / Paper 1.21.11
         run: >-
@@ -89,6 +98,7 @@ jobs:
           cp "$JAR" "dist/${OUTPUT_NAME}"
           JAR="dist/${OUTPUT_NAME}"
           jar tf "$JAR" | grep -Fq 'plugin.yml'
+          unzip -p "$JAR" plugin.yml | grep -Fq 'version: 1.0.1'
           javap -verbose -classpath "$JAR" me.gallowsdove.foxymachines.FoxyMachines | grep -Fq 'major version: 65'
           if jar tf "$JAR" | grep -q '^io/github/thebusybiscuit/slimefun4/'; then
             echo 'Slimefun core classes must not be shaded into FoxyMachines.' >&2
@@ -112,7 +122,7 @@ jobs:
           set -euo pipefail
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v${LEGACY_VERSION}"; fi
           JAR="dist/${OUTPUT_NAME}"
-          NOTES="Slimefun Legacy compatibility build. Compiled directly against Slimefun Legacy ${SLIMEFUN_LEGACY_VERSION} on Paper 1.21.11 and Paper 26.2, verified as Java 21 bytecode, and checked to exclude shaded Slimefun core classes."
+          NOTES="Slimefun Legacy compatibility release. Modernized for current Paper APIs, compiled directly against Slimefun Legacy ${SLIMEFUN_LEGACY_VERSION} on Paper 1.21.11 and Paper 26.2, ran the Maven test lifecycle, verified Java 21 bytecode, and checked that Slimefun core classes are not shaded into the addon."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$JAR" --clobber
           else
