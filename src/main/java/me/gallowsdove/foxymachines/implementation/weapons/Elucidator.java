@@ -31,7 +31,7 @@ public class Elucidator extends OnHitWeapon {
 
         // Life Steal II && Overheal
         double health = humanoid.getHealth() + 1.5D;
-        double maxHealth = humanoid.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+        double maxHealth = humanoid.getAttribute(Attribute.MAX_HEALTH).getValue();
 
         if (health > maxHealth) {
             humanoid.setHealth(maxHealth);

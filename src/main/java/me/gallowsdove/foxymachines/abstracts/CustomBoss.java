@@ -77,13 +77,13 @@ public abstract class CustomBoss extends CustomMob {
             if (entity.isInsideVehicle() && entity.getVehicle() instanceof LivingEntity vehicle) {
                 double finalHealth = entity.getHealth() + vehicle.getHealth() - event.getFinalDamage();
                 if (finalHealth > 0) {
-                    bossbar.setProgress(Math.min(finalHealth / (entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue() +
-                            vehicle.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue()), 1));
+                    bossbar.setProgress(Math.min(finalHealth / (entity.getAttribute(Attribute.MAX_HEALTH).getBaseValue() +
+                            vehicle.getAttribute(Attribute.MAX_HEALTH).getBaseValue()), 1));
                 }
             } else {
                 double finalHealth = entity.getHealth() - event.getFinalDamage();
                 if (finalHealth > 0) {
-                    bossbar.setProgress(Math.min(finalHealth / entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue(), 1));
+                    bossbar.setProgress(Math.min(finalHealth / entity.getAttribute(Attribute.MAX_HEALTH).getBaseValue(), 1));
                 }
             }
         }
@@ -136,10 +136,10 @@ public abstract class CustomBoss extends CustomMob {
         BossBar bossbar = Bukkit.createBossBar(KEY, style.name, style.color, style.style, style.flags);
         bossbar.setVisible(true);
         if (entity.isInsideVehicle() && entity.getVehicle() instanceof LivingEntity vehicle) {
-            bossbar.setProgress(Math.min((entity.getHealth() + vehicle.getHealth()) / (entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue() +
-                    vehicle.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue()), 1));
+            bossbar.setProgress(Math.min((entity.getHealth() + vehicle.getHealth()) / (entity.getAttribute(Attribute.MAX_HEALTH).getBaseValue() +
+                    vehicle.getAttribute(Attribute.MAX_HEALTH).getBaseValue()), 1));
         } else {
-            bossbar.setProgress(Math.min(entity.getHealth() / entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue(), 1));
+            bossbar.setProgress(Math.min(entity.getHealth() / entity.getAttribute(Attribute.MAX_HEALTH).getBaseValue(), 1));
         }
         instances.put(entity, bossbar);
         return bossbar;

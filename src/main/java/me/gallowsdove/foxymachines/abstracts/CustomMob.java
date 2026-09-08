@@ -80,7 +80,7 @@ public abstract class CustomMob {
         LivingEntity entity = (LivingEntity) loc.getWorld().spawnEntity(loc, this.type);
         PersistentDataAPI.setString(entity, KEY, this.id);
 
-        Objects.requireNonNull(entity.getAttribute(Attribute.GENERIC_MAX_HEALTH)).setBaseValue(this.health);
+        Objects.requireNonNull(entity.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(this.health);
         entity.setHealth(this.health);
         entity.setCustomName(this.name);
         entity.setCustomNameVisible(true);

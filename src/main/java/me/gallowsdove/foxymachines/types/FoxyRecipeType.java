@@ -13,7 +13,7 @@ public class FoxyRecipeType {
             "&e&oUse &c/foxy quest &e&oto view your current quest."));
     static {
         ItemMeta meta = QUEST_ITEM.getItemMeta();
-        meta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+        meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         QUEST_ITEM.setItemMeta(meta);
     }
 

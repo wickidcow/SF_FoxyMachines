@@ -19,7 +19,7 @@ public class Pixie extends CustomMob {
 
     @Override
     public void onSpawn(@Nonnull LivingEntity spawned) {
-        spawned.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(24);
+        spawned.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(24);
     }
 
     @Override
