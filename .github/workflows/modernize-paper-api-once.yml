@@ -1,0 +1,141 @@
+name: Modernize FoxyMachines Paper API Once
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/modernize-paper-api-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  modernize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Apply modern Paper API names
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          replacements = {
+              'Enchantment.DURABILITY': 'Enchantment.UNBREAKING',
+              'Enchantment.LUCK': 'Enchantment.LUCK_OF_THE_SEA',
+              'Enchantment.DAMAGE_ALL': 'Enchantment.SHARPNESS',
+              'Enchantment.LOOT_BONUS_MOBS': 'Enchantment.LOOTING',
+              'Enchantment.PROTECTION_ENVIRONMENTAL': 'Enchantment.PROTECTION',
+              'Enchantment.WATER_WORKER': 'Enchantment.AQUA_AFFINITY',
+              'Enchantment.OXYGEN': 'Enchantment.RESPIRATION',
+              'Enchantment.PROTECTION_FALL': 'Enchantment.FEATHER_FALLING',
+              'Enchantment.ARROW_DAMAGE': 'Enchantment.POWER',
+              'Enchantment.ARROW_INFINITE': 'Enchantment.INFINITY',
+              'PotionEffectType.INCREASE_DAMAGE': 'PotionEffectType.STRENGTH',
+              'PotionEffectType.DAMAGE_RESISTANCE': 'PotionEffectType.RESISTANCE',
+              'PotionEffectType.JUMP': 'PotionEffectType.JUMP_BOOST',
+              'PotionEffectType.HARM': 'PotionEffectType.INSTANT_DAMAGE',
+              'PotionEffectType.HEAL': 'PotionEffectType.INSTANT_HEALTH',
+              'PotionEffectType.SLOW': 'PotionEffectType.SLOWNESS',
+              'PotionEffectType.CONFUSION': 'PotionEffectType.NAUSEA',
+              'Attribute.GENERIC_MAX_HEALTH': 'Attribute.MAX_HEALTH',
+              'Attribute.GENERIC_ATTACK_DAMAGE': 'Attribute.ATTACK_DAMAGE',
+              'Attribute.GENERIC_ARMOR': 'Attribute.ARMOR',
+              'Particle.VILLAGER_HAPPY': 'Particle.HAPPY_VILLAGER',
+              'ItemFlag.HIDE_POTION_EFFECTS': 'ItemFlag.HIDE_ADDITIONAL_TOOLTIP',
+          }
+
+          changed = []
+          for path in Path('src/main/java').rglob('*.java'):
+              text = path.read_text(encoding='utf-8')
+              original = text
+              for old, new in replacements.items():
+                  text = re.sub(re.escape(old) + r'\b', new, text)
+
+              if path.name == 'PotionMixer.java':
+                  switch_names = {
+                      'case INSTANT_DAMAGE:': 'case HARMING:',
+                      'case INSTANT_HEAL:': 'case HEALING:',
+                      'case JUMP:': 'case LEAPING:',
+                      'case REGEN:': 'case REGENERATION:',
+                      'case SPEED:': 'case SWIFTNESS:',
+                  }
+                  for old, new in switch_names.items():
+                      text = text.replace(old, new)
+                  text = text.replace(
+                      'potionMeta.setBasePotionData(new PotionData(PotionType.UNCRAFTABLE, false, false));',
+                      'potionMeta.setBasePotionType(null);'
+                  )
+
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  changed.append(str(path))
+
+          if not changed:
+              raise SystemExit('No source files were changed; migration is already applied or mappings no longer match.')
+          print('Modernized source files:')
+          print('\n'.join(changed))
+
+      - name: Install exact Slimefun Legacy 4.1.46
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p legacy-deps
+          gh release download v4.1.46 \
+            --repo wickidcow/Slimefun-Legacy \
+            --pattern 'Slimefun-Legacy4.1.46.jar' \
+            --dir legacy-deps
+          mvn -B install:install-file \
+            -Dfile=legacy-deps/Slimefun-Legacy4.1.46.jar \
+            -DgroupId=com.github.wickidcow \
+            -DartifactId=Slimefun-Legacy \
+            -Dversion=4.1.46 \
+            -Dpackaging=jar \
+            -DgeneratePom=true
+
+      - name: Compile migrated source on Paper 1.21.11
+        run: >-
+          mvn -B -Dmaven.test.skip=true
+          -Dpaper.version=1.21.11-R0.1-SNAPSHOT
+          -Dslimefun.groupId=com.github.wickidcow
+          -Dslimefun.artifactId=Slimefun-Legacy
+          -Dslimefun.version=4.1.46
+          clean package
+
+      - name: Compile migrated source on Paper 26.2
+        run: >-
+          mvn -B -Dmaven.test.skip=true
+          -Dpaper.version=26.2.build.111-stable
+          -Dslimefun.groupId=com.github.wickidcow
+          -Dslimefun.artifactId=Slimefun-Legacy
+          -Dslimefun.version=4.1.46
+          clean package
+
+      - name: Commit validated migration
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git status --short
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java
+          git diff --cached --quiet && { echo 'No validated source changes to commit.' >&2; exit 1; }
+          git commit -m 'Modernize FoxyMachines for Paper 1.21.11 and 26.2 APIs'
+          git push origin HEAD:master
