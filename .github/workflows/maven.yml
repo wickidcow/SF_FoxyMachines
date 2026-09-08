@@ -17,6 +17,10 @@ env:
   OUTPUT_NAME: "SF_FoxyMachines1.0.1.jar"
   SLIMEFUN_LEGACY_VERSION: "4.1.46"
 
+concurrency:
+  group: foxymachines-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,6 +34,13 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
+
+      - name: Verify release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq '<version>1.0.1</version>' pom.xml
+          grep -Fq '<maven.compiler.release>21</maven.compiler.release>' pom.xml
 
       - name: Install Slimefun Legacy 4.1.46 into local Maven repo
         env:
