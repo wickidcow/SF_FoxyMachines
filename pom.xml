@@ -13,12 +13,16 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.release>21</maven.compiler.release>
         <lombok.version>1.18.48</lombok.version>
+        <paper.version>1.21.11-R0.1-SNAPSHOT</paper.version>
+        <slimefun.groupId>com.github.Slimefun</slimefun.groupId>
+        <slimefun.artifactId>Slimefun4</slimefun.artifactId>
+        <slimefun.version>RC-37</slimefun.version>
     </properties>
 
     <repositories>
         <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <repository>
             <id>jitpack.io</id>
@@ -87,9 +91,7 @@
                 <executions>
                     <execution>
                         <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
+                        <goals><goal>shade</goal></goals>
                     </execution>
                 </executions>
             </plugin>
@@ -98,16 +100,16 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.19.4-R0.1-SNAPSHOT</version>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <version>${paper.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.github.Slimefun</groupId>
-            <artifactId>Slimefun4</artifactId>
-            <version>RC-37</version>
+            <groupId>${slimefun.groupId}</groupId>
+            <artifactId>${slimefun.artifactId}</artifactId>
+            <version>${slimefun.version}</version>
             <scope>provided</scope>
         </dependency>
 
