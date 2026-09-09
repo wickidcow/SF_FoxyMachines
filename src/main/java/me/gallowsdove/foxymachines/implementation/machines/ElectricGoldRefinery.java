@@ -177,9 +177,30 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
     public MachineRecipe getProcessing(Block b) {
         return processing.get(b);
     }
-
     public boolean isProcessing(Block b) {
         return getProcessing(b) != null;
+    }
+
+    /**
+     * Exposes the refinery's selectable recipes through Slimefun's long-standing public recipe type.
+     *
+     * <p>Slimefun Legacy can discover this method through its generic machine recipe provider, while
+     * FoxyMachines remains source-compatible with classic Slimefun cores that do not provide the
+     * newer Legacy structured recipe API. This is display metadata only and does not alter runtime
+     * selection, consumption, processing, or output behavior.</p>
+     */
+    @Nonnull
+    public List<MachineRecipe> getMachineRecipes() {
+        List<MachineRecipe> recipes = new ArrayList<>(GOLDS.length);
+        for (int goldTier = 0; goldTier < GOLDS.length; goldTier++) {
+            int goldCost = goldTier + 1;
+            recipes.add(new MachineRecipe(
+                    (int) (3 + 0.5 * goldTier),
+                    new ItemStack[] { new SlimefunItemStack(SlimefunItems.GOLD_DUST, goldCost) },
+                    new ItemStack[] { GOLDS[goldTier].clone() }
+            ));
+        }
+        return List.copyOf(recipes);
     }
 
     private BlockBreakHandler onBreak() {
