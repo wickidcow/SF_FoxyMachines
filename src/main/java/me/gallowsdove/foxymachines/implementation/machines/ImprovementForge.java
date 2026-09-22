@@ -148,6 +148,36 @@ public class ImprovementForge extends SlimefunItem implements EnergyNetComponent
         return getProcessing(b) != null;
     }
 
+    /**
+     * Exposes the finite tier-upgrade matrix through Slimefun's long-standing public recipe type.
+     *
+     * <p>The runtime scan resolves duplicate source materials to the last matching column. Mirror that
+     * behavior here so guide metadata contains one recipe for each effective upgrade rather than a
+     * duplicate shovel entry. This is display metadata only; item metadata preservation still happens
+     * in {@link #findNextRecipe(BlockMenu)} when the real machine processes an item.</p>
+     */
+    @Nonnull
+    public List<MachineRecipe> getMachineRecipes() {
+        List<MachineRecipe> recipes = new ArrayList<>();
+        for (int tier = 0; tier < tools.length - 1; tier++) {
+            Map<Material, Integer> effectiveIndexes = new LinkedHashMap<>();
+            for (int index = 0; index < tools[tier].length; index++) {
+                effectiveIndexes.put(tools[tier][index], index);
+            }
+
+            for (Map.Entry<Material, Integer> entry : effectiveIndexes.entrySet()) {
+                ItemStack input = new ItemStack(entry.getKey());
+                ItemStack output = new ItemStack(tools[tier + 1][entry.getValue()]);
+                recipes.add(new MachineRecipe(
+                        45,
+                        new ItemStack[] { Items.IMPROVEMENT_CORE.clone(), input },
+                        new ItemStack[] { output }
+                ));
+            }
+        }
+        return List.copyOf(recipes);
+    }
+
     @Nonnull
     private BlockBreakHandler onBreak() {
         return new BlockBreakHandler(false, false) {
