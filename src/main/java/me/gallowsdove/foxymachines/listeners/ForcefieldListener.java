@@ -91,7 +91,7 @@ public class ForcefieldListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     private void onPlayerTeleport(@Nonnull PlayerTeleportEvent e) {
-        if (e.getCause() == TeleportCause.ENDER_PEARL || e.getCause() == TeleportCause.CHORUS_FRUIT) {
+        if (e.getCause() == TeleportCause.ENDER_PEARL || e.getCause() == TeleportCause.CONSUMABLE_EFFECT) {
             Location l = e.getTo();
             for (SimpleLocation loc: ForcefieldDome.domeLocations) {
                 if (e.getPlayer().getWorld() == Bukkit.getServer().getWorld(UUID.fromString(loc.getWorldUUID()))) {

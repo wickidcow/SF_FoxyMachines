@@ -10,6 +10,8 @@ import me.gallowsdove.foxymachines.abstracts.CustomMob;
 import me.gallowsdove.foxymachines.utils.Utils;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
@@ -26,7 +28,12 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 public class HeadlessHorseman extends CustomBoss {
 
@@ -168,13 +175,65 @@ public class HeadlessHorseman extends CustomBoss {
                     return;
                 }
 
-                EntityDamageEvent event = new EntityDamageEvent(player, DamageCause.CUSTOM, 12);
+                EntityDamageEvent event = createSyntheticDamageEvent(player, 12);
                 Bukkit.getServer().getPluginManager().callEvent(event);
                 if (!event.isCancelled()) {
                     player.damage(12.4);
                     Utils.dealDamageBypassingArmor(player, 1.72);
                 }
             });
+        }
+    }
+
+    private static EntityDamageEvent createSyntheticDamageEvent(Player player, double damage) {
+        DamageSource source = DamageSource.builder(DamageType.GENERIC).build();
+
+        try {
+            Class<?> modifierClass = Class.forName(
+                    "org.bukkit.event.entity.EntityDamageEvent$DamageModifier",
+                    false,
+                    EntityDamageEvent.class.getClassLoader()
+            );
+
+            Object baseModifier = null;
+            for (Object constant : modifierClass.getEnumConstants()) {
+                if (constant instanceof Enum<?> enumConstant && enumConstant.name().equals("BASE")) {
+                    baseModifier = constant;
+                    break;
+                }
+            }
+
+            if (baseModifier == null) {
+                throw new IllegalStateException("Paper damage modifier BASE is unavailable");
+            }
+
+            Map<Object, Double> modifiers = new HashMap<>();
+            modifiers.put(baseModifier, damage);
+
+            Map<Object, Function<? super Double, Double>> modifierFunctions = new HashMap<>();
+            modifierFunctions.put(baseModifier, ignored -> -0.0D);
+
+            Constructor<EntityDamageEvent> constructor = EntityDamageEvent.class.getConstructor(
+                    Entity.class,
+                    DamageCause.class,
+                    DamageSource.class,
+                    Map.class,
+                    Map.class
+            );
+
+            return constructor.newInstance(
+                    player,
+                    DamageCause.CUSTOM,
+                    source,
+                    modifiers,
+                    modifierFunctions
+            );
+        } catch (ClassNotFoundException
+                | NoSuchMethodException
+                | InstantiationException
+                | IllegalAccessException
+                | InvocationTargetException ex) {
+            throw new IllegalStateException("Unable to construct FoxyMachines synthetic damage event", ex);
         }
     }
 

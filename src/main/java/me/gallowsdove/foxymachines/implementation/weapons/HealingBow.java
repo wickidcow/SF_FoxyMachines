@@ -14,6 +14,22 @@ import javax.annotation.Nonnull;
 
 public class HealingBow extends SlimefunBow {
 
+    private static final Effect BLOCK_BREAK_EFFECT = resolveEffect("DESTROY_BLOCK", "STEP_SOUND");
+
+    private static Effect resolveEffect(String currentName, String legacyName) {
+        try {
+            return Effect.valueOf(currentName);
+        } catch (IllegalArgumentException ignored) {
+            return Effect.valueOf(legacyName);
+        }
+    }
+
+    private static Object brainCoralEffectData() {
+        return BLOCK_BREAK_EFFECT.name().equals("DESTROY_BLOCK")
+                ? Material.BRAIN_CORAL.createBlockData()
+                : Material.BRAIN_CORAL;
+    }
+
     public HealingBow() {
         super(Items.WEAPONS_AND_ARMORS_ITEM_GROUP, Items.HEALING_BOW, new ItemStack[] {
                 null, SlimefunItems.SYNTHETIC_DIAMOND, Items.REINFORCED_STRING,
@@ -26,8 +42,8 @@ public class HealingBow extends SlimefunBow {
     @Override
     public BowShootHandler onShoot() {
         return (e, n) -> {
-            n.getWorld().playEffect(n.getLocation(), Effect.STEP_SOUND, Material.BRAIN_CORAL);
-            n.getWorld().playEffect(n.getEyeLocation(), Effect.STEP_SOUND, Material.BRAIN_CORAL);
+            n.getWorld().playEffect(n.getLocation(), BLOCK_BREAK_EFFECT, brainCoralEffectData());
+            n.getWorld().playEffect(n.getEyeLocation(), BLOCK_BREAK_EFFECT, brainCoralEffectData());
             e.getDamager().remove();
             e.setCancelled(true);
             n.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTH, 1, (int)Math.floor(e.getDamage()/5)));
