@@ -18,6 +18,15 @@ import javax.annotation.Nonnull;
 public class ElectricWindStaff extends SlimefunItem implements Rechargeable {
 
     private static final float COST = 0.75F;
+    private static final Effect SMOKE_EFFECT = resolveEffect("SMOKE_SHOOT", "SMOKE");
+
+    private static Effect resolveEffect(String currentName, String legacyName) {
+        try {
+            return Effect.valueOf(currentName);
+        } catch (IllegalArgumentException ignored) {
+            return Effect.valueOf(legacyName);
+        }
+    }
 
     public ElectricWindStaff() {
         super(Items.TOOLS_ITEM_GROUP, Items.ELECTRIC_WIND_STAFF, RecipeType.ENHANCED_CRAFTING_TABLE, new ItemStack[] {
@@ -46,7 +55,7 @@ public class ElectricWindStaff extends SlimefunItem implements Rechargeable {
             if (removeItemCharge(item, COST)) {
                 p.setVelocity(p.getEyeLocation().getDirection().multiply(4));
                 p.getWorld().playSound(p.getLocation(), Sound.ENTITY_TNT_PRIMED, 1, 1);
-                p.getWorld().playEffect(p.getLocation(), Effect.SMOKE_SHOOT, BlockFace.NORTH);
+                p.getWorld().playEffect(p.getLocation(), SMOKE_EFFECT, SMOKE_EFFECT.name().equals("SMOKE_SHOOT") ? BlockFace.NORTH : 1);
                 p.setFallDistance(0F);
             }
         };
