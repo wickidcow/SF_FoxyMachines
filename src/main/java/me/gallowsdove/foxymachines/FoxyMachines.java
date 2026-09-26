@@ -75,7 +75,7 @@ public class FoxyMachines extends AbstractAddon {
         getAddonCommand().addSub(new KillallCommand()).addSub((new QuestCommand())).
                 addSub(new SacrificialAltarCommand()).addSub(new SummonCommand()).addSub(new ListallCommand());
 
-        if (getConfig().getBoolean("auto-update") && getDescription().getVersion().startsWith("Dev - ")) {
+        if (getConfig().getBoolean("auto-update") && getPluginMeta().getVersion().startsWith("Dev - ")) {
             BlobBuildUpdater updater = new BlobBuildUpdater(this, this.getFile(), "FoxyMachines", "Dev");
             updater.start();
         }
