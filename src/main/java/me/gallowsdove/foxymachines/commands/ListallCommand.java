@@ -2,7 +2,8 @@ package me.gallowsdove.foxymachines.commands;
 
 import io.github.mooy1.infinitylib.commands.SubCommand;
 import me.gallowsdove.foxymachines.abstracts.CustomMob;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 
 import javax.annotation.Nonnull;
@@ -16,7 +17,7 @@ public class ListallCommand extends SubCommand {
     @Override
     protected void execute(@Nonnull CommandSender sender, @Nonnull String[] args) {
         if (args.length != 0) {
-            sender.sendMessage(ChatColor.LIGHT_PURPLE + "Usage: /foxy listall");
+            sender.sendMessage(Component.text("Usage: /foxy listall", NamedTextColor.LIGHT_PURPLE));
             return;
         }
 

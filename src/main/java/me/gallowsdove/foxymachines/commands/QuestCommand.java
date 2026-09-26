@@ -4,7 +4,8 @@ import io.github.mooy1.infinitylib.commands.SubCommand;
 import io.github.thebusybiscuit.slimefun4.utils.SlimefunUtils;
 import me.gallowsdove.foxymachines.Items;
 import me.gallowsdove.foxymachines.utils.QuestUtils;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -23,7 +24,7 @@ public class QuestCommand extends SubCommand {
         }
 
         if (args.length != 0) {
-            commandSender.sendMessage(ChatColor.LIGHT_PURPLE + "Usage: /foxy quest");
+            commandSender.sendMessage(Component.text("Usage: /foxy quest", NamedTextColor.LIGHT_PURPLE));
             return;
         }
 
@@ -32,8 +33,13 @@ public class QuestCommand extends SubCommand {
         } else if (SlimefunUtils.isItemSimilar(p.getInventory().getItemInMainHand(), Items.CELESTIAL_SWORD, false, false)) {
             QuestUtils.sendQuestLine(p, Items.CELESTIAL_SWORD);
         } else {
-            p.sendMessage(ChatColor.LIGHT_PURPLE + "You need to be holding the " + ChatColor.RED + "Cursed Sword" +
-                    ChatColor.LIGHT_PURPLE + " or the " + ChatColor.YELLOW + "Celestial Sword" + ChatColor.LIGHT_PURPLE + " to view your quest.");
+            p.sendMessage(
+                Component.text("You need to be holding the ", NamedTextColor.LIGHT_PURPLE)
+                    .append(Component.text("Cursed Sword", NamedTextColor.RED))
+                    .append(Component.text(" or the ", NamedTextColor.LIGHT_PURPLE))
+                    .append(Component.text("Celestial Sword", NamedTextColor.YELLOW))
+                    .append(Component.text(" to view your quest.", NamedTextColor.LIGHT_PURPLE))
+            );
         }
     }
 

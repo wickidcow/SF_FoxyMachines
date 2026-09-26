@@ -43,7 +43,7 @@ import me.gallowsdove.foxymachines.implementation.weapons.CursedSword;
 import me.gallowsdove.foxymachines.implementation.weapons.Elucidator;
 import me.gallowsdove.foxymachines.implementation.weapons.HealingBow;
 import me.gallowsdove.foxymachines.types.FoxyRecipeType;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -258,12 +258,12 @@ final class ItemSetup {
                 null, null, null,
                 null, Items.CURSED_SWORD, null,
                 null, null, null
-                }, ChatColor.RED).register(FoxyMachines.getInstance());
+                }, NamedTextColor.RED).register(FoxyMachines.getInstance());
         new ShardMaterial(Items.MATERIALS_ITEM_GROUP, Items.CELESTIAL_SHARD, FoxyRecipeType.QUEST, new ItemStack[] {
                 null, null, null,
                 null, Items.CELESTIAL_SWORD, null,
                 null, null, null
-                }, ChatColor.YELLOW).register(FoxyMachines.getInstance());
+                }, NamedTextColor.YELLOW).register(FoxyMachines.getInstance());
         new SlimefunItem(Items.MATERIALS_ITEM_GROUP, Items.EQUANIMOUS_GEM, RecipeType.ANCIENT_ALTAR, new ItemStack[] {
                 Items.CURSED_SHARD, Items.CELESTIAL_SHARD, Items.CURSED_SHARD,
                 Items.CELESTIAL_SHARD, new ItemStack(Material.EMERALD), Items.CELESTIAL_SHARD,

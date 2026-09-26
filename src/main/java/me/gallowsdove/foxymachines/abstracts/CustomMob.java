@@ -5,6 +5,8 @@ import lombok.Getter;
 import me.gallowsdove.foxymachines.FoxyMachines;
 
 import io.github.thebusybiscuit.slimefun4.libraries.commons.lang.Validate;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.common.ChatColors;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
 
@@ -57,7 +59,7 @@ public abstract class CustomMob {
     @Nonnull
     private final String id;
     @Nonnull
-    private final String name;
+    private final Component name;
     @Getter
     @Nonnull
     private final EntityType type;
@@ -66,7 +68,7 @@ public abstract class CustomMob {
     @ParametersAreNonnullByDefault
     protected CustomMob(String id, String name, EntityType type, int health) {
         Validate.notNull(this.id = id);
-        Validate.notNull(this.name = ChatColors.color(name));
+        Validate.notNull(this.name = LegacyComponentSerializer.legacySection().deserialize(ChatColors.color(name)));
         Validate.notNull(this.type = type);
         Validate.isTrue(type.isAlive(), "Entity type " + type + " is not alive!");
         Validate.isTrue((this.health = health) > 0);
@@ -82,7 +84,7 @@ public abstract class CustomMob {
 
         Objects.requireNonNull(entity.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(this.health);
         entity.setHealth(this.health);
-        entity.setCustomName(this.name);
+        entity.customName(this.name);
         entity.setCustomNameVisible(true);
 
         entity.setRemoveWhenFarAway(true);
@@ -141,9 +143,9 @@ public abstract class CustomMob {
     }
 
     public static void debug() {
-        Bukkit.broadcastMessage("CACHE:");
+        Bukkit.broadcast(Component.text("CACHE:"));
         for (Map.Entry<CustomMob, Set<UUID>> entry : CustomMob.MOB_CACHE.entrySet()) {
-            Bukkit.broadcastMessage(entry.getKey().getId() + " (" + entry.getValue().size() + ")\n" + entry.getValue().stream().map(UUID::toString).collect(Collectors.joining("\n")));
+            Bukkit.broadcast(Component.text(entry.getKey().getId() + " (" + entry.getValue().size() + ")\n" + entry.getValue().stream().map(UUID::toString).collect(Collectors.joining("\n"))));
         }
     }
 

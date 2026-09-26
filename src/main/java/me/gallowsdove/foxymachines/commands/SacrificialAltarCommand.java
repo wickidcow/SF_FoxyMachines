@@ -1,7 +1,8 @@
 package me.gallowsdove.foxymachines.commands;
 
 import io.github.mooy1.infinitylib.commands.SubCommand;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -19,7 +20,7 @@ public class SacrificialAltarCommand extends SubCommand {
             return;
         }
 
-        p.sendMessage(ChatColor.LIGHT_PURPLE + "https://youtu.be/KbwCCpzq3O0");
+        p.sendMessage(Component.text("https://youtu.be/KbwCCpzq3O0", NamedTextColor.LIGHT_PURPLE));
     }
 
     @Override

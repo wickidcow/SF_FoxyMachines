@@ -10,7 +10,8 @@ import io.github.thebusybiscuit.slimefun4.implementation.items.SimpleSlimefunIte
 import io.github.thebusybiscuit.slimefun4.utils.SlimefunUtils;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -107,13 +108,13 @@ public class UnbreakableRune extends SimpleSlimefunItem<ItemDropHandler> {
                         setUnbreakable(itemStack);
                         l.getWorld().dropItemNaturally(l, itemStack);
 
-                        p.sendMessage(ChatColor.LIGHT_PURPLE + "Your item is now Unbreakable.");
+                        p.sendMessage(Component.text("Your item is now Unbreakable.", NamedTextColor.LIGHT_PURPLE));
                     } else {
-                        p.sendMessage(ChatColor.LIGHT_PURPLE + "Your item could not be made Unbreakable");
+                        p.sendMessage(Component.text("Your item could not be made Unbreakable", NamedTextColor.LIGHT_PURPLE));
                     }
                 });
             } else {
-                p.sendMessage(ChatColor.LIGHT_PURPLE + "Your item could not be made Unbreakable");
+                p.sendMessage(Component.text("Your item could not be made Unbreakable", NamedTextColor.LIGHT_PURPLE));
             }
         }
     }
@@ -160,7 +161,7 @@ public class UnbreakableRune extends SimpleSlimefunItem<ItemDropHandler> {
         final String id = slimefunItem.getId();
         final String addon = slimefunItem.getAddon().getName();
         if (BLACKLIST.containsKey(addon) && BLACKLIST.get(addon).contains(id)) {
-            player.sendMessage(ChatColor.LIGHT_PURPLE + "You can't make this item unbreakable!");
+            player.sendMessage(Component.text("You can't make this item unbreakable!", NamedTextColor.LIGHT_PURPLE));
             return true;
         }
         return false;

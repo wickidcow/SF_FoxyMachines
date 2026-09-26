@@ -1,6 +1,8 @@
 package me.gallowsdove.foxymachines.abstracts;
 
 import io.github.mooy1.infinitylib.core.AddonConfig;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
@@ -91,15 +93,22 @@ public abstract class AbstractWand extends SlimefunItem implements NotPlaceable,
                 String humanizedName = ChatUtils.humanize(material.toString());
                 if ((material.isBlock() && material.isSolid() && material.isOccluding() && !BLACKLIST.contains(material)) ||
                         WHITELIST.contains(material)) {
-                    player.sendMessage(ChatColor.LIGHT_PURPLE + "Material set to: " + humanizedName);
+                    player.sendMessage(Component.text("Material set to: " + humanizedName, NamedTextColor.LIGHT_PURPLE));
                     container.set(AbstractWand.MATERIAL_KEY, PersistentDataType.STRING, material.toString());
-                    List<String> lore = this.getItem().getItemMeta().getLore();
-                    lore.set(lore.size() - 2, ChatColor.GRAY + "Material: " + ChatColor.YELLOW + humanizedName);
-                    meta.setLore(lore);
+                    List<Component> baseLore = this.getItem().getItemMeta().lore();
+                    if (baseLore != null && baseLore.size() >= 2) {
+                        List<Component> lore = new ArrayList<>(baseLore);
+                        lore.set(
+                            lore.size() - 2,
+                            Component.text("Material: ", NamedTextColor.GRAY)
+                                .append(Component.text(humanizedName, NamedTextColor.YELLOW))
+                        );
+                        meta.lore(lore);
+                    }
                     itemInInventory.setItemMeta(meta);
                     setItemCharge(itemInInventory, getItemCharge(itemInInventory)); // To update it in lore
                 } else {
-                    player.sendMessage(ChatColor.RED + "Cannot use: " + humanizedName + ", with the fill wand");
+                    player.sendMessage(Component.text("Cannot use: " + humanizedName + ", with the fill wand", NamedTextColor.RED));
                 }
             } else {
                 if (isRemoving() && !container.has(MATERIAL_KEY, PersistentDataType.STRING)) {
@@ -114,7 +123,7 @@ public abstract class AbstractWand extends SlimefunItem implements NotPlaceable,
 
                 Inventory inventory = player.getInventory();
                 if (!container.has(MATERIAL_KEY, PersistentDataType.STRING)) {
-                    player.sendMessage(ChatColor.RED + "Select a building material with Shift + Right Click!");
+                    player.sendMessage(Component.text("Select a building material with Shift + Right Click!", NamedTextColor.RED));
                     return;
                 }
                 Material material = Material.getMaterial(container.get(MATERIAL_KEY, PersistentDataType.STRING));
@@ -133,12 +142,12 @@ public abstract class AbstractWand extends SlimefunItem implements NotPlaceable,
                             });
                         }
                     } else {
-                        player.sendMessage(ChatColor.RED + "Your item doesn't have enough energy for that!");
-                        player.sendMessage(ChatColor.RED + "Energy needed: " + getCostPerBlock() * locs.size());
+                        player.sendMessage(Component.text("Your item doesn't have enough energy for that!", NamedTextColor.RED));
+                        player.sendMessage(Component.text("Energy needed: " + getCostPerBlock() * locs.size(), NamedTextColor.RED));
                     }
                 } else {
-                    player.sendMessage(ChatColor.RED + "There aren't enough materials in your inventory!");
-                    player.sendMessage(ChatColor.RED + "Current items: " + Utils.countItemInInventory(inventory, blocks) + " Needed: " + locs.size());
+                    player.sendMessage(Component.text("There aren't enough materials in your inventory!", NamedTextColor.RED));
+                    player.sendMessage(Component.text("Current items: " + Utils.countItemInInventory(inventory, blocks) + " Needed: " + locs.size(), NamedTextColor.RED));
                 }
             }
         };
@@ -151,7 +160,7 @@ public abstract class AbstractWand extends SlimefunItem implements NotPlaceable,
         SimpleLocation loc2 = SimpleLocation.fromPersistentStorage(container, "secondary_position");
 
         if (loc1 == null || loc2 == null || !loc1.getWorldUUID().equals(loc2.getWorldUUID())) {
-            player.sendMessage(ChatColor.RED + "Please select both locations using Position Selector!");
+            player.sendMessage(Component.text("Please select both locations using Position Selector!", NamedTextColor.RED));
             return locs;
         }
 
@@ -174,14 +183,14 @@ public abstract class AbstractWand extends SlimefunItem implements NotPlaceable,
         }
 
         if ((loc1.getX() - loc2.getX()) * (loc1.getY() - loc2.getY()) * (loc1.getZ() - loc2.getZ()) > getMaxBlocks()) {
-            player.sendMessage(ChatColor.RED + "Selected area is too big!");
+            player.sendMessage(Component.text("Selected area is too big!", NamedTextColor.RED));
             return locs;
         }
 
         World world = Bukkit.getWorld(UUID.fromString(loc1.getWorldUUID()));
 
         if (world == null) {
-            player.sendMessage(ChatColor.RED + "Please select both locations using Position Selector!");
+            player.sendMessage(Component.text("Please select both locations using Position Selector!", NamedTextColor.RED));
             return locs;
         }
 
@@ -197,7 +206,7 @@ public abstract class AbstractWand extends SlimefunItem implements NotPlaceable,
         }
 
         if (locs.isEmpty()) {
-            player.sendMessage(ChatColor.RED + "No valid locations found given the selected points!");
+            player.sendMessage(Component.text("No valid locations found given the selected points!", NamedTextColor.RED));
         }
 
         return locs;

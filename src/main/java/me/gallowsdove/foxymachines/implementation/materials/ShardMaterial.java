@@ -8,14 +8,16 @@ import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.implementation.items.SimpleSlimefunItem;
 import me.gallowsdove.foxymachines.listeners.SacrificialAltarListener;
 import me.gallowsdove.foxymachines.utils.QuestUtils;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
 
 public class ShardMaterial extends SimpleSlimefunItem<ItemDropHandler> {
-    private final ChatColor color;
-    public ShardMaterial(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe, ChatColor color) {
+    private final TextColor color;
+    public ShardMaterial(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe, TextColor color) {
         super(itemGroup, item, recipeType, recipe);
 
         this.color = color;
@@ -31,7 +33,11 @@ public class ShardMaterial extends SimpleSlimefunItem<ItemDropHandler> {
 
             Slimefun.runSync(() -> {
                 if (!QuestUtils.hasActiveQuest(p)) {
-                    p.sendMessage(this.color + "You should check your quest with " + ChatColor.LIGHT_PURPLE + "/foxy quest " + this.color + "first!");
+                    p.sendMessage(
+                        Component.text("You should check your quest with ", this.color)
+                            .append(Component.text("/foxy quest ", NamedTextColor.LIGHT_PURPLE))
+                            .append(Component.text("first!", this.color))
+                    );
                     return;
                 }
 
@@ -39,7 +45,7 @@ public class ShardMaterial extends SimpleSlimefunItem<ItemDropHandler> {
                     return;
                 }
 
-                p.sendMessage(this.color + "Reset active quest!");
+                p.sendMessage(Component.text("Reset active quest!", this.color));
                 QuestUtils.resetQuestLine(p);
                 SacrificialAltarListener.particleAnimation(item.getLocation());
 

@@ -2,7 +2,8 @@ package me.gallowsdove.foxymachines.commands;
 
 import io.github.mooy1.infinitylib.commands.SubCommand;
 import me.gallowsdove.foxymachines.abstracts.CustomMob;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -22,7 +23,7 @@ public final class SummonCommand extends SubCommand {
         }
 
         if (args.length != 1) {
-            sender.sendMessage(ChatColor.LIGHT_PURPLE + "Usage: /foxy summon <MOB_ID>");
+            sender.sendMessage(Component.text("Usage: /foxy summon <MOB_ID>", NamedTextColor.LIGHT_PURPLE));
             return;
         }
 

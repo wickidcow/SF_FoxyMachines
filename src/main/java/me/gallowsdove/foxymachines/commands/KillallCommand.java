@@ -4,7 +4,8 @@ import io.github.mooy1.infinitylib.commands.SubCommand;
 import me.gallowsdove.foxymachines.abstracts.CustomBoss;
 import me.gallowsdove.foxymachines.abstracts.CustomMob;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -27,7 +28,7 @@ public class KillallCommand extends SubCommand {
         }
 
         if (args.length != 0) {
-            sender.sendMessage(ChatColor.LIGHT_PURPLE + "Usage: /foxy killall");
+            sender.sendMessage(Component.text("Usage: /foxy killall", NamedTextColor.LIGHT_PURPLE));
             return;
         }
 
