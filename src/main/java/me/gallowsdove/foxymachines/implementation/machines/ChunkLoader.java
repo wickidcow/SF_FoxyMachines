@@ -9,7 +9,7 @@ import io.github.thebusybiscuit.slimefun4.core.handlers.BlockUseHandler;
 import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import me.gallowsdove.foxymachines.utils.SlimefunBlockDataUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -44,15 +44,16 @@ public class ChunkLoader extends SlimefunItem {
             @Override
             public void onPlayerBreak(@Nonnull BlockBreakEvent e, @Nonnull ItemStack item, @Nonnull List<ItemStack> drops) {
                 Block b = e.getBlock();
-                if (BlockStorage.getLocationInfo(b.getLocation(), "owner") != null) {
+                String owner = SlimefunBlockDataUtil.getValue(b, "owner");
+                if (owner != null) {
                     NamespacedKey key = new NamespacedKey(FoxyMachines.getInstance(), "chunkloaders");
-                    Player p = Bukkit.getPlayer(UUID.fromString(BlockStorage.getLocationInfo(b.getLocation(), "owner")));
+                    Player p = Bukkit.getPlayer(UUID.fromString(owner));
 
                     int i = p.getPersistentDataContainer().get(key, PersistentDataType.INTEGER) - 1;
                     p.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, i);
 
                     b.getChunk().setForceLoaded(false);
-                    BlockStorage.clearBlockInfo(b);
+                    SlimefunBlockDataUtil.remove(b);
                 }
 
                 Scheduler.run(() -> b.setType(Material.GLASS));
