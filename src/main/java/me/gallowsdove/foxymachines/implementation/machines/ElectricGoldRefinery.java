@@ -19,11 +19,11 @@ import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu.AdvancedMenu
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
 import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.abstractItems.MachineRecipe;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
 import me.mrCookieSlime.Slimefun.api.inventory.DirtyChestMenu;
 import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -37,6 +37,8 @@ import org.bukkit.persistence.PersistentDataType;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+
+import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 
 
 public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetComponent {
@@ -71,18 +73,19 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
                 for (int i = 0; i < 12; i++) {
                     final int j = i;
                     menu.addMenuClickHandler(GOLD_INDEXES[j], (p, slot, item, action) -> {
-                        BlockStorage.addBlockInfo(b, "gold_recipe", Integer.toString(j));
+                        setBlockData(b, "gold_recipe", Integer.toString(j));
                         newInstance(menu, b);
                         return false;
                     });
                 }
 
-                if (!BlockStorage.hasBlockInfo(b) ||
-                        BlockStorage.getLocationInfo(b.getLocation(), "gold_recipe") == null ||
-                        BlockStorage.getLocationInfo(b.getLocation(), "gold_recipe").equals("11")) {
+                String goldRecipe = getBlockDataValue(b, "gold_recipe");
+                if (getSlimefunBlockData(b.getLocation()) == null ||
+                        goldRecipe == null ||
+                        goldRecipe.equals("11")) {
                     menu.replaceExistingItem(32, new CustomItemStack(Material.RED_STAINED_GLASS_PANE, "&6Current Recipe: &cNONE", "", "&e> Choose on the left to change it"));
                 } else {
-                    switch (BlockStorage.getLocationInfo(b.getLocation(), "gold_recipe")) {
+                    switch (goldRecipe) {
                         case "0" -> menu.replaceExistingItem(32, new CustomItemStack(Material.GOLD_INGOT, "&6Current Recipe: &fGold Ingot &7(4 Carat)", "", "&e> Choose on the left to change it"));
                         case "1" -> menu.replaceExistingItem(32, new CustomItemStack(Material.GOLD_INGOT, "&6Current Recipe: &fGold Ingot &7(6 Carat)", "", "&e> Choose on the left to change it"));
                         case "2" -> menu.replaceExistingItem(32, new CustomItemStack(Material.GOLD_INGOT, "&6Current Recipe: &fGold Ingot &7(8 Carat)", "", "&e> Choose on the left to change it"));
@@ -208,7 +211,7 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
             @Override
             public void onPlayerBreak(@Nonnull BlockBreakEvent e, @Nonnull ItemStack item, @Nonnull List<ItemStack> drops) {
                 Block b = e.getBlock();
-                BlockMenu inv = BlockStorage.getInventory(b);
+                BlockMenu inv = getBlockMenu(b);
 
                 if (inv != null) {
                     inv.dropItems(b.getLocation(), getOutputSlots());
@@ -235,7 +238,7 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
     }
 
     protected void tick(@Nonnull Block b) {
-        BlockMenu inv = BlockStorage.getInventory(b);
+        BlockMenu inv = getBlockMenu(b);
 
         if (isProcessing(b)) {
             int timeleft = progress.get(b);
@@ -264,13 +267,39 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
             }
         }
         else {
-            MachineRecipe next = findNextRecipe(inv, BlockStorage.getLocationInfo(b.getLocation(), "gold_recipe"));
+            MachineRecipe next = findNextRecipe(inv, getBlockDataValue(b, "gold_recipe"));
 
             if (next != null) {
                 processing.put(b, next);
                 progress.put(b, next.getTicks());
             }
         }
+    }
+
+    private static @Nullable SlimefunBlockData getSlimefunBlockData(@Nonnull Location location) {
+        var controller = Slimefun.getDatabaseManager().getBlockDataController();
+        SlimefunBlockData data = controller.getBlockData(location);
+        if (data != null && !data.isDataLoaded()) {
+            controller.loadBlockData(data);
+        }
+        return data;
+    }
+
+    private static @Nullable String getBlockDataValue(@Nonnull Block block, @Nonnull String key) {
+        SlimefunBlockData data = getSlimefunBlockData(block.getLocation());
+        return data == null ? null : data.getData(key);
+    }
+
+    private static void setBlockData(@Nonnull Block block, @Nonnull String key, @Nonnull String value) {
+        SlimefunBlockData data = getSlimefunBlockData(block.getLocation());
+        if (data != null) {
+            data.setData(key, value);
+        }
+    }
+
+    private static @Nullable BlockMenu getBlockMenu(@Nonnull Block block) {
+        SlimefunBlockData data = getSlimefunBlockData(block.getLocation());
+        return data == null ? null : data.getBlockMenu();
     }
 
     @Nullable
