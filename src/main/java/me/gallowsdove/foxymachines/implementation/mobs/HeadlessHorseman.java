@@ -8,6 +8,9 @@ import me.gallowsdove.foxymachines.Items;
 import me.gallowsdove.foxymachines.abstracts.CustomBoss;
 import me.gallowsdove.foxymachines.abstracts.CustomMob;
 import me.gallowsdove.foxymachines.utils.Utils;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.damage.DamageSource;
@@ -46,7 +49,7 @@ public class HeadlessHorseman extends CustomBoss {
     private static final NamespacedKey PATTERN_KEY = new NamespacedKey(FoxyMachines.getInstance(), "pattern");
 
     public HeadlessHorseman() {
-        super("HEADLESS_HORSEMAN", ChatColor.RED + "Headless Horseman", EntityType.SKELETON, 1,
+        super("HEADLESS_HORSEMAN", LegacyComponentSerializer.legacySection().serialize(Component.text("Headless Horseman", NamedTextColor.RED)), EntityType.SKELETON, 1,
                 DamageCause.BLOCK_EXPLOSION, DamageCause.ENTITY_EXPLOSION, DamageCause.THORNS);
     }
 
