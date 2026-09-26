@@ -5,7 +5,8 @@ import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.implementation.machines.ForcefieldDome;
 import me.gallowsdove.foxymachines.utils.SimpleLocation;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -100,7 +101,7 @@ public class ForcefieldListener implements Listener {
                     int zdif = (int) (l.getZ() - loc.getZ());
                     if (Math.floor(Math.sqrt((xdif * xdif) + (ydif * ydif) + (zdif * zdif))) <= 32) {
                         e.setCancelled(true);
-                        e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "You can't teleport to a dome!");
+                        e.getPlayer().sendMessage(Component.text("You can't teleport to a dome!", NamedTextColor.LIGHT_PURPLE));
                         break;
                     }
                 }
