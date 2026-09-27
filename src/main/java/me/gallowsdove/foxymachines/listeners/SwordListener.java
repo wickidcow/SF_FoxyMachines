@@ -8,7 +8,8 @@ import me.gallowsdove.foxymachines.implementation.weapons.CelestialSword;
 import me.gallowsdove.foxymachines.implementation.weapons.CursedSword;
 import me.gallowsdove.foxymachines.implementation.weapons.OnHitWeapon;
 import me.gallowsdove.foxymachines.utils.QuestUtils;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -58,11 +59,11 @@ public class SwordListener implements Listener {
 
         if (sfItem instanceof CursedSword) {
             inventory.addItem(new SlimefunItemStack(Items.CURSED_SHARD, 1));
-            p.sendMessage(ChatColor.RED + "The Cursed Sword is pleased.");
+            p.sendMessage(Component.text("The Cursed Sword is pleased.", NamedTextColor.RED));
             Scheduler.run(20, () -> QuestUtils.sendQuestLine(p, Items.CURSED_SWORD));
         } else if (sfItem instanceof CelestialSword) {
             inventory.addItem(new SlimefunItemStack(Items.CELESTIAL_SHARD, 1));
-            p.sendMessage(ChatColor.YELLOW + "The Celestial Sword is pleased.");
+            p.sendMessage(Component.text("The Celestial Sword is pleased.", NamedTextColor.YELLOW));
             Scheduler.run(20, () -> QuestUtils.sendQuestLine(p, Items.CELESTIAL_SWORD));
         }
     }

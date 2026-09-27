@@ -6,7 +6,8 @@ import io.github.thebusybiscuit.slimefun4.utils.SlimefunUtils;
 import me.gallowsdove.foxymachines.Items;
 import me.gallowsdove.foxymachines.implementation.tools.PositionSelector;
 import me.gallowsdove.foxymachines.utils.SimpleLocation;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,7 +27,7 @@ public class PositionSelectorListener implements Listener {
                 Block block = e.getClickedBlock();
                 SimpleLocation loc = new SimpleLocation(block, "primary_position");
                 loc.storePersistently(player.getPersistentDataContainer());
-                player.sendMessage(ChatColor.LIGHT_PURPLE + "Primary position set to " + loc);
+                player.sendMessage(Component.text("Primary position set to " + loc, NamedTextColor.LIGHT_PURPLE));
             }
         }
     }

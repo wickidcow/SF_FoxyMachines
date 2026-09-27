@@ -4,7 +4,8 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.utils.ChatUtils;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -105,11 +106,11 @@ public class QuestUtils {
         if (item == Items.CURSED_SWORD) {
             int i = random.nextInt(CURSED_LINES.size());
             String line = CURSED_LINES.get(i).replace("{entity}", entity);
-            p.sendMessage(ChatColor.RED + line);
+            p.sendMessage(Component.text(line, NamedTextColor.RED));
         } else if (item == Items.CELESTIAL_SWORD) {
             int i = random.nextInt(CELESTIAL_LINES.size());
             String line = CELESTIAL_LINES.get(i).replace("{entity}", entity);
-            p.sendMessage(ChatColor.YELLOW + line);
+            p.sendMessage(Component.text(line, NamedTextColor.YELLOW));
         }
     }
 

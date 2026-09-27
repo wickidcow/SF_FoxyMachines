@@ -10,7 +10,8 @@ import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
 import me.gallowsdove.foxymachines.utils.SimpleLocation;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -66,7 +67,7 @@ public class BerryBushTrimmer extends SlimefunItem {
 
                     p.getInventory().setItemInMainHand(shears);
                 } else {
-                    p.sendMessage(ChatColor.LIGHT_PURPLE + "This berry bush is already trimmed!");
+                    p.sendMessage(Component.text("This berry bush is already trimmed!", NamedTextColor.LIGHT_PURPLE));
                 }
             }
 

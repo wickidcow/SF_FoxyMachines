@@ -9,7 +9,8 @@ import io.github.thebusybiscuit.slimefun4.core.handlers.ToolUseHandler;
 import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import me.gallowsdove.foxymachines.Items;
 import me.gallowsdove.foxymachines.utils.SimpleLocation;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -46,7 +47,7 @@ public class PositionSelector extends SlimefunItem implements NotPlaceable, Rech
 
                 SimpleLocation loc = new SimpleLocation(block, "secondary_position");
                 loc.storePersistently(player.getPersistentDataContainer());
-                player.sendMessage(ChatColor.LIGHT_PURPLE + "Secondary position set to " + loc);
+                player.sendMessage(Component.text("Secondary position set to " + loc, NamedTextColor.LIGHT_PURPLE));
             }
         };
     }
