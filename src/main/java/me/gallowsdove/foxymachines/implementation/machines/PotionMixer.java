@@ -13,9 +13,8 @@ import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
 import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
 import me.gallowsdove.foxymachines.Items;
+import me.gallowsdove.foxymachines.utils.LegacyMenuCompat;
 import me.gallowsdove.foxymachines.utils.SlimefunBlockDataUtil;
-import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu.AdvancedMenuClickHandler;
-import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
 import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.abstractItems.MachineRecipe;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
@@ -27,7 +26,6 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
@@ -456,18 +454,7 @@ public class PotionMixer extends SlimefunItem implements EnergyNetComponent {
         preset.addItem(13, new CustomItemStack(Material.BLACK_STAINED_GLASS_PANE, " "), ChestMenuUtils.getEmptyClickHandler());
 
         for (int i : getOutputSlots()) {
-            preset.addMenuClickHandler(i, new AdvancedMenuClickHandler() {
-
-                @Override
-                public boolean onClick(@Nonnull Player p, int slot, @Nonnull ItemStack cursor, @Nonnull ClickAction action) {
-                    return false;
-                }
-
-                @Override
-                public boolean onClick(@Nonnull InventoryClickEvent e, @Nonnull Player p, int slot, @Nullable ItemStack cursor, @Nonnull ClickAction action) {
-                    return cursor == null || cursor.getType() == Material.AIR;
-                }
-            });
+            preset.addMenuClickHandler(i, LegacyMenuCompat.getOutputSlotHandler());
         }
     }
 }
