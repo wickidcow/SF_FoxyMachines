@@ -73,7 +73,11 @@ public class GhostBlock extends SlimefunItem {
                 return;
             }
 
-            FallingBlock block = b.getWorld().spawnFallingBlock(b.getLocation().add(0.5, 0, 0.5), material.createBlockData());
+            FallingBlock block = b.getWorld().spawn(
+                b.getLocation().add(0.5, 0, 0.5),
+                FallingBlock.class,
+                falling -> falling.setBlockData(material.createBlockData())
+            );
             block.setVelocity(new Vector(0, 0, 0));
             block.setGravity(false);
             block.setDropItem(false);
