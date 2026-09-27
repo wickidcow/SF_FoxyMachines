@@ -1,6 +1,7 @@
 package me.gallowsdove.foxymachines.abstracts;
 
 import me.gallowsdove.foxymachines.FoxyMachines;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -32,6 +33,11 @@ public abstract class CustomBoss extends CustomMob {
     private final Set<DamageCause> resistances;
 
     protected CustomBoss(@Nonnull String id, @Nonnull String name, @Nonnull EntityType type, int health, @Nonnull DamageCause... resistances) {
+        super(id, name, type, health);
+        this.resistances = Set.of(resistances);
+    }
+
+    protected CustomBoss(@Nonnull String id, @Nonnull Component name, @Nonnull EntityType type, int health, @Nonnull DamageCause... resistances) {
         super(id, name, type, health);
         this.resistances = Set.of(resistances);
     }
