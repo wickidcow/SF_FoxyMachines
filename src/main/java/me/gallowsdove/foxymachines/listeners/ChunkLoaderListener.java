@@ -5,8 +5,9 @@ import io.github.thebusybiscuit.slimefun4.libraries.dough.config.Config;
 import io.github.thebusybiscuit.slimefun4.utils.SlimefunUtils;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import org.bukkit.ChatColor;
+import me.gallowsdove.foxymachines.utils.SlimefunBlockDataUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -36,7 +37,7 @@ public class ChunkLoaderListener implements Listener {
         Block b = e.getBlockPlaced();
         if (b.getChunk().isForceLoaded()) {
             e.setCancelled(true);
-            p.sendMessage(ChatColor.LIGHT_PURPLE + "This chunk is already loaded!");
+            p.sendMessage(Component.text("This chunk is already loaded!", NamedTextColor.LIGHT_PURPLE));
             return;
         }
 
@@ -47,7 +48,7 @@ public class ChunkLoaderListener implements Listener {
         if (!p.hasPermission("foxymachines.bypass-chunk-loader-limit")) {
             int max = cfg.getInt("max-chunk-loaders");
             if (max != 0 && max < i) {
-                p.sendMessage(ChatColor.LIGHT_PURPLE + "Maximum amount of chunk loaders already placed: " + max);
+                p.sendMessage(Component.text("Maximum amount of chunk loaders already placed: " + max, NamedTextColor.LIGHT_PURPLE));
                 e.setCancelled(true);
                 return;
             }
@@ -55,13 +56,13 @@ public class ChunkLoaderListener implements Listener {
         int currentComplexity = Slimefun.getGPSNetwork().getNetworkComplexity(p.getUniqueId());
         int requiredComplexity = cfg.getInt("gps-complexity-per-loader") * i;
         if (currentComplexity < requiredComplexity) {
-            p.sendMessage(ChatColor.LIGHT_PURPLE + "You have " + currentComplexity + "/" + requiredComplexity + " GPS Network Complexity required to place another Chunk Loader.");
+            p.sendMessage(Component.text("You have " + currentComplexity + "/" + requiredComplexity + " GPS Network Complexity required to place another Chunk Loader.", NamedTextColor.LIGHT_PURPLE));
             e.setCancelled(true);
             return;
         }
 
         p.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, i);
         b.getChunk().setForceLoaded(true);
-        BlockStorage.addBlockInfo(b, "owner", p.getUniqueId().toString());
+        SlimefunBlockDataUtil.setValue(b, "owner", p.getUniqueId().toString());
     }
 }

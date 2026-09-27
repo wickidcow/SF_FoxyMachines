@@ -8,9 +8,10 @@ import io.github.thebusybiscuit.slimefun4.core.handlers.ItemUseHandler;
 import me.gallowsdove.foxymachines.Items;
 import me.gallowsdove.foxymachines.implementation.machines.ForcefieldDome;
 import me.gallowsdove.foxymachines.utils.SimpleLocation;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import me.gallowsdove.foxymachines.utils.SlimefunBlockDataUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
@@ -47,15 +48,15 @@ public class RemoteController extends SlimefunItem implements NotPlaceable, Rech
             if (e.getPlayer().isSneaking()) {
                 if (e.getClickedBlock().isPresent()) {
                     Block b = e.getClickedBlock().get();
-                    if (BlockStorage.getLocationInfo(b.getLocation(), "owner") != null && BlockStorage.getLocationInfo(b.getLocation(), "active") != null) {
+                    if (SlimefunBlockDataUtil.getValue(b, "owner") != null && SlimefunBlockDataUtil.getValue(b, "active") != null) {
 
                         SimpleLocation loc = new SimpleLocation(b.getX(), b.getY(), b.getZ(), b.getWorld().getUID().toString(), "forcefield");
 
                         loc.storePersistently(container);
                         itemInInventory.setItemMeta(meta);
-                        e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "Forcefield dome is now bound to the remote controller.");
+                        e.getPlayer().sendMessage(Component.text("Forcefield dome is now bound to the remote controller.", NamedTextColor.LIGHT_PURPLE));
                     } else {
-                        e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "You must bind this to a Forcefield Dome block.");
+                        e.getPlayer().sendMessage(Component.text("You must bind this to a Forcefield Dome block.", NamedTextColor.LIGHT_PURPLE));
                     }
                 }
             } else {
@@ -66,17 +67,17 @@ public class RemoteController extends SlimefunItem implements NotPlaceable, Rech
 
                     Block b = world.getBlockAt(loc.getX(), loc.getY(), loc.getZ());
 
-                    if (BlockStorage.getLocationInfo(b.getLocation(), "owner") != null && BlockStorage.getLocationInfo(b.getLocation(), "active") != null) {
+                    if (SlimefunBlockDataUtil.getValue(b, "owner") != null && SlimefunBlockDataUtil.getValue(b, "active") != null) {
                         if (removeItemCharge(item, COST)) {
                             ForcefieldDome.INSTANCE.switchActive(b, e.getPlayer());
                         } else {
-                            e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "Charge your remote controller first.");
+                            e.getPlayer().sendMessage(Component.text("Charge your remote controller first.", NamedTextColor.LIGHT_PURPLE));
                         }
                     } else {
-                        e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "Forcefield belonging to this remote control wasn't found.");
+                        e.getPlayer().sendMessage(Component.text("Forcefield belonging to this remote control wasn't found.", NamedTextColor.LIGHT_PURPLE));
                     }
                 } else {
-                    e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "Bind this item with Shift + Right Click first!");
+                    e.getPlayer().sendMessage(Component.text("Bind this item with Shift + Right Click first!", NamedTextColor.LIGHT_PURPLE));
                 }
             }
         };

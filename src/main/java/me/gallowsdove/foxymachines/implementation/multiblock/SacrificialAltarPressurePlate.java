@@ -7,8 +7,9 @@ import io.github.thebusybiscuit.slimefun4.core.handlers.BlockPlaceHandler;
 import io.github.thebusybiscuit.slimefun4.core.handlers.BlockUseHandler;
 import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import me.gallowsdove.foxymachines.Items;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import org.bukkit.ChatColor;
+import me.gallowsdove.foxymachines.utils.SlimefunBlockDataUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -39,11 +40,11 @@ public class SacrificialAltarPressurePlate extends SlimefunItem {
             public void onPlayerPlace(@Nonnull BlockPlaceEvent e) {
                 Block b = e.getBlockPlaced();
                 if (isComplete(b)) {
-                    BlockStorage.addBlockInfo(b, "complete", "true");
-                    e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "The Sacrificial Altar has been activated.");
+                    SlimefunBlockDataUtil.setValue(b, "complete", "true");
+                    e.getPlayer().sendMessage(Component.text("The Sacrificial Altar has been activated.", NamedTextColor.LIGHT_PURPLE));
                 } else {
-                    BlockStorage.addBlockInfo(b, "complete", "false");
-                    e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "Finish your Altar and click this block again to activate it.");
+                    SlimefunBlockDataUtil.setValue(b, "complete", "false");
+                    e.getPlayer().sendMessage(Component.text("Finish your Altar and click this block again to activate it.", NamedTextColor.LIGHT_PURPLE));
                 }
             }
         };
@@ -52,13 +53,13 @@ public class SacrificialAltarPressurePlate extends SlimefunItem {
     private BlockUseHandler onUse() {
         return e -> {
             Block b = e.getClickedBlock().get();
-            if (BlockStorage.getLocationInfo(b.getLocation(), "complete").equals("false")) {
+            if ("false".equals(SlimefunBlockDataUtil.getValue(b, "complete"))) {
                 if (isComplete(b)) {
-                    BlockStorage.addBlockInfo(b, "complete", "true");
-                    e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "The Sacrificial Altar has been activated.");
+                    SlimefunBlockDataUtil.setValue(b, "complete", "true");
+                    e.getPlayer().sendMessage(Component.text("The Sacrificial Altar has been activated.", NamedTextColor.LIGHT_PURPLE));
                 } else {
-                    BlockStorage.addBlockInfo(b, "complete", "false");
-                    e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "The Altar is not finished!");
+                    SlimefunBlockDataUtil.setValue(b, "complete", "false");
+                    e.getPlayer().sendMessage(Component.text("The Altar is not finished!", NamedTextColor.LIGHT_PURPLE));
                 }
             }
 
@@ -70,9 +71,9 @@ public class SacrificialAltarPressurePlate extends SlimefunItem {
         return new BlockBreakHandler(false, false) {
             @Override
             public void onPlayerBreak(@Nonnull BlockBreakEvent e, @Nonnull ItemStack item, @Nonnull List<ItemStack> drops) {
-                BlockStorage.addBlockInfo(e.getBlock(), "complete", null);
-                BlockStorage.clearBlockInfo(e.getBlock());
-                e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "The Altar has been broken!");
+                SlimefunBlockDataUtil.setValue(e.getBlock(), "complete", null);
+                SlimefunBlockDataUtil.remove(e.getBlock());
+                e.getPlayer().sendMessage(Component.text("The Altar has been broken!", NamedTextColor.LIGHT_PURPLE));
             }
         };
     }
@@ -119,11 +120,12 @@ public class SacrificialAltarPressurePlate extends SlimefunItem {
     }
 
     private boolean isAltarPiece(@Nonnull Block b) {
-        if (BlockStorage.getLocationInfo(b.getLocation(), "id") == null) {
+        String id = SlimefunBlockDataUtil.getId(b);
+        if (id == null) {
             return false;
         }
 
-        return switch (BlockStorage.getLocationInfo(b.getLocation(), "id")) {
+        return switch (id) {
             case "SACRIFICIAL_ALTAR_BLACKSTONE_BRICKS", "SACRIFICIAL_ALTAR_BLACKSTONE_BRICK_WALL", "SACRIFICIAL_ALTAR_BLACKSTONE_BRICK_STAIRS", "SACRIFICIAL_ALTAR_SOUL_TORCH" -> true;
             default -> false;
         };

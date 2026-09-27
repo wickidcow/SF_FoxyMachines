@@ -33,7 +33,23 @@ public final class SlimefunBlockDataUtil {
 
     public static @Nullable String getValue(@NotNull Location location, @NotNull String key) {
         SlimefunBlockData data = getData(location);
-        return data == null ? null : data.getData(key);
+        if (data == null) {
+            return null;
+        }
+        return "id".equals(key) ? data.getSfId() : data.getData(key);
+    }
+
+    public static @Nullable String getId(@NotNull Location location) {
+        SlimefunBlockData data = getData(location);
+        return data == null ? null : data.getSfId();
+    }
+
+    public static @Nullable String getId(@NotNull Block block) {
+        return getId(block.getLocation());
+    }
+
+    public static boolean hasData(@NotNull Block block) {
+        return getData(block) != null;
     }
 
     public static @Nullable String getValue(@NotNull Block block, @NotNull String key) {

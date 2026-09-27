@@ -5,8 +5,9 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.core.handlers.BlockBreakHandler;
 import me.gallowsdove.foxymachines.Items;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import org.bukkit.ChatColor;
+import me.gallowsdove.foxymachines.utils.SlimefunBlockDataUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -35,14 +36,16 @@ public class SacrificialAltarPiece extends SlimefunItem {
                 Block b = findAltar(e.getBlock());
 
                 if (b != null) {
-                    if (BlockStorage.getLocationInfo(b.getLocation(), "complete") != null &&
-                            BlockStorage.getLocationInfo(b.getLocation(), "complete").equals("true")) {
-                        BlockStorage.addBlockInfo(b, "complete", "false");
-                        e.getPlayer().sendMessage(ChatColor.LIGHT_PURPLE + "Part of the altar has been broken, please repair it and reactivate it!");
+                    if ("true".equals(SlimefunBlockDataUtil.getValue(b, "complete"))) {
+                        SlimefunBlockDataUtil.setValue(b, "complete", "false");
+                        e.getPlayer().sendMessage(Component.text(
+                            "Part of the altar has been broken, please repair it and reactivate it!",
+                            NamedTextColor.LIGHT_PURPLE
+                        ));
                     }
                 }
 
-                BlockStorage.clearBlockInfo(e.getBlock());
+                SlimefunBlockDataUtil.remove(e.getBlock());
             }
         };
     }
@@ -58,8 +61,8 @@ public class SacrificialAltarPiece extends SlimefunItem {
 
                     Block block = b.getRelative(x, y, z);
 
-                    if (block.getType() == Material.POLISHED_BLACKSTONE_PRESSURE_PLATE && BlockStorage.getLocationInfo(block.getLocation(), "id") != null &&
-                            BlockStorage.getLocationInfo(block.getLocation(), "id").equals("SACRIFICIAL_ALTAR_BLACKSTONE_PRESSURE_PLATE")) {
+                    if (block.getType() == Material.POLISHED_BLACKSTONE_PRESSURE_PLATE
+                            && "SACRIFICIAL_ALTAR_BLACKSTONE_PRESSURE_PLATE".equals(SlimefunBlockDataUtil.getId(block))) {
                         return block;
                     }
                 }

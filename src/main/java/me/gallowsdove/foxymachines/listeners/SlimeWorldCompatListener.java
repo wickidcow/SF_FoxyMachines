@@ -1,6 +1,6 @@
 package me.gallowsdove.foxymachines.listeners;
 
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import me.gallowsdove.foxymachines.utils.SlimefunBlockDataUtil;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.event.EventHandler;
@@ -30,7 +30,7 @@ public class SlimeWorldCompatListener implements Listener {
 
         for (Location loc : storage.keySet()) {
             try {
-                String id = BlockStorage.checkID(loc);
+                String id = SlimefunBlockDataUtil.getId(loc);
                 if ("CHUNK_LOADER".equals(id)) {
                     loc.getChunk().setForceLoaded(true);
                 }
@@ -45,7 +45,7 @@ public class SlimeWorldCompatListener implements Listener {
 
         for (Location loc : storage.keySet()) {
             try {
-                String id = BlockStorage.checkID(loc);
+                String id = SlimefunBlockDataUtil.getId(loc);
                 if ("CHUNK_LOADER".equals(id)) {
                     loc.getChunk().setForceLoaded(false);
                 }
@@ -69,7 +69,8 @@ public class SlimeWorldCompatListener implements Listener {
 
     private Map<Location, Object> getOriginalRawStorage(World world) {
         try {
-            Method method = BlockStorage.class.getMethod("getRawStorage", World.class);
+            Class<?> blockStorageClass = Class.forName("me.mrCookieSlime.Slimefun.api.BlockStorage");
+            Method method = blockStorageClass.getMethod("getRawStorage", World.class);
             Object value = method.invoke(null, world);
             if (!(value instanceof Map<?, ?> raw)) {
                 return null;
