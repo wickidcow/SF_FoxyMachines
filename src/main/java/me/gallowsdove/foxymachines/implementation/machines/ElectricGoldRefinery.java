@@ -14,8 +14,7 @@ import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
 import io.github.thebusybiscuit.slimefun4.utils.SlimefunUtils;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
-import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu.AdvancedMenuClickHandler;
-import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
+import me.gallowsdove.foxymachines.utils.LegacyMenuCompat;
 import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.abstractItems.MachineRecipe;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
@@ -28,7 +27,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -71,11 +69,10 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
             public void newInstance(@Nonnull BlockMenu menu, @Nonnull Block b) {
                 for (int i = 0; i < 12; i++) {
                     final int j = i;
-                    menu.addMenuClickHandler(GOLD_INDEXES[j], (p, slot, item, action) -> {
+                    menu.addMenuClickHandler(GOLD_INDEXES[j], LegacyMenuCompat.runAndCancel(() -> {
                         setBlockData(b, "gold_recipe", Integer.toString(j));
                         newInstance(menu, b);
-                        return false;
-                    });
+                    }));
                 }
 
                 String goldRecipe = getBlockDataValue(b, "gold_recipe");
@@ -391,18 +388,7 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
         }
 
         for (int i : getOutputSlots()) {
-            preset.addMenuClickHandler(i, new AdvancedMenuClickHandler() {
-
-                @Override
-                public boolean onClick(Player p, int slot, ItemStack cursor, ClickAction action) {
-                    return false;
-                }
-
-                @Override
-                public boolean onClick(InventoryClickEvent e, Player p, int slot, ItemStack cursor, ClickAction action) {
-                    return cursor == null || cursor.getType() == Material.AIR;
-                }
-            });
+            preset.addMenuClickHandler(i, LegacyMenuCompat.getOutputSlotHandler());
         }
     }
 }
