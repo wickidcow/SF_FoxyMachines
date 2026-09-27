@@ -2,6 +2,7 @@ package me.gallowsdove.foxymachines.implementation.mobs;
 
 import me.gallowsdove.foxymachines.abstracts.CustomBoss;
 import me.gallowsdove.foxymachines.abstracts.CustomMob;
+import net.kyori.adventure.text.Component;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -26,7 +27,7 @@ public class RiddenSkeletonHorse extends CustomMob {
 
     @Override
     public void onSpawn(@Nonnull LivingEntity spawned) {
-        spawned.setCustomName("");
+        spawned.customName(Component.empty());
         spawned.setCustomNameVisible(false);
         spawned.setRemoveWhenFarAway(false);
         spawned.getAttribute(Attribute.ARMOR).setBaseValue(30);

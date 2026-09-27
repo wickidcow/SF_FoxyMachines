@@ -2,6 +2,8 @@ package me.gallowsdove.foxymachines.implementation.mobs;
 
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
 import me.gallowsdove.foxymachines.abstracts.CustomBoss;
@@ -37,7 +39,7 @@ public class PixieQueen extends CustomBoss {
     private static final NamespacedKey PATTERN_KEY = new NamespacedKey(FoxyMachines.getInstance(), "pattern");
 
     public PixieQueen() {
-        super("PIXIE_QUEEN", ChatColor.GREEN + "Pixie Queen", EntityType.VEX, 800,
+        super("PIXIE_QUEEN", Component.text("Pixie Queen", NamedTextColor.GREEN), EntityType.VEX, 800,
                 DamageCause.BLOCK_EXPLOSION, DamageCause.ENTITY_EXPLOSION, DamageCause.THORNS);
     }
 

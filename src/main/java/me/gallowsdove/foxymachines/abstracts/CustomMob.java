@@ -67,8 +67,13 @@ public abstract class CustomMob {
 
     @ParametersAreNonnullByDefault
     protected CustomMob(String id, String name, EntityType type, int health) {
+        this(id, LegacyComponentSerializer.legacySection().deserialize(ChatColors.color(name)), type, health);
+    }
+
+    @ParametersAreNonnullByDefault
+    protected CustomMob(String id, Component name, EntityType type, int health) {
         Validate.notNull(this.id = id);
-        Validate.notNull(this.name = LegacyComponentSerializer.legacySection().deserialize(ChatColors.color(name)));
+        Validate.notNull(this.name = name);
         Validate.notNull(this.type = type);
         Validate.isTrue(type.isAlive(), "Entity type " + type + " is not alive!");
         Validate.isTrue((this.health = health) > 0);

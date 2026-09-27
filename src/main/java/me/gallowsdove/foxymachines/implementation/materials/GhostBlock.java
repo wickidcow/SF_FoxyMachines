@@ -9,7 +9,8 @@ import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -64,7 +65,7 @@ public class GhostBlock extends SlimefunItem {
             Block b = e.getClickedBlock().get().getRelative(e.getClickedFace());
 
             if (!Slimefun.getProtectionManager().hasPermission(p, b, Interaction.PLACE_BLOCK)) {
-                p.sendMessage(ChatColor.LIGHT_PURPLE + "You don't have permission to place this here!");
+                p.sendMessage(Component.text("You don't have permission to place this here!", NamedTextColor.LIGHT_PURPLE));
                 return;
             }
 
