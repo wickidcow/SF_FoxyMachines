@@ -14,7 +14,6 @@ import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
 import io.github.thebusybiscuit.slimefun4.utils.SlimefunUtils;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
-import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu.AdvancedMenuClickHandler;
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
 import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.abstractItems.MachineRecipe;
@@ -165,7 +164,13 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public int getCapacity() {
+        return CAPACITY;
+    }
+
+    @Override
+    public long getCapacityLong() {
         return CAPACITY;
     }
 
@@ -226,7 +231,7 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
         addItemHandler(new BlockTicker() {
 
             @Override
-            public void tick(@Nonnull Block b, @Nonnull SlimefunItem sf, @Nonnull Config data) {
+            public void tick(@Nonnull Block b, @Nonnull SlimefunItem sf, @Nonnull SlimefunBlockData data) {
                 ElectricGoldRefinery.this.tick(b);
             }
 
@@ -247,11 +252,11 @@ public class ElectricGoldRefinery extends SlimefunItem implements EnergyNetCompo
                 ChestMenuUtils.updateProgressbar(inv, 23, timeleft, processing.get(b).getTicks(), getProgressBar());
 
                 if (isChargeable()) {
-                    if (getCharge(b.getLocation()) < getEnergyConsumption()) {
+                    if (getChargeLong(b.getLocation()) < getEnergyConsumption()) {
                         return;
                     }
 
-                    removeCharge(b.getLocation(), getEnergyConsumption());
+                    removeCharge(b.getLocation(), (long) getEnergyConsumption());
                 }
                 progress.put(b, timeleft - 1);
             }

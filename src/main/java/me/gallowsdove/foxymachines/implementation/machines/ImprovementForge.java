@@ -1,5 +1,6 @@
 package me.gallowsdove.foxymachines.implementation.machines;
 
+import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
@@ -13,12 +14,11 @@ import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction
 import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
 import io.github.thebusybiscuit.slimefun4.utils.SlimefunUtils;
 import me.gallowsdove.foxymachines.Items;
-import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
+import me.gallowsdove.foxymachines.utils.SlimefunBlockDataUtil;
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu.AdvancedMenuClickHandler;
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
 import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.abstractItems.MachineRecipe;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
 import me.mrCookieSlime.Slimefun.api.inventory.DirtyChestMenu;
@@ -126,7 +126,13 @@ public class ImprovementForge extends SlimefunItem implements EnergyNetComponent
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public int getCapacity() {
+        return CAPACITY;
+    }
+
+    @Override
+    public long getCapacityLong() {
         return CAPACITY;
     }
 
@@ -184,7 +190,7 @@ public class ImprovementForge extends SlimefunItem implements EnergyNetComponent
             @Override
             public void onPlayerBreak(@Nonnull BlockBreakEvent e, @Nonnull ItemStack item, @Nonnull List<ItemStack> drops) {
                 Block b = e.getBlock();
-                BlockMenu inv = BlockStorage.getInventory(b);
+                BlockMenu inv = SlimefunBlockDataUtil.getMenu(b);
 
                 if (inv != null) {
                     inv.dropItems(b.getLocation(), getOutputSlots());
@@ -199,7 +205,7 @@ public class ImprovementForge extends SlimefunItem implements EnergyNetComponent
         addItemHandler(new BlockTicker() {
 
             @Override
-            public void tick(@Nonnull Block b, @Nonnull SlimefunItem sf, @Nonnull Config data) {
+            public void tick(@Nonnull Block b, @Nonnull SlimefunItem sf, @Nonnull SlimefunBlockData data) {
                 ImprovementForge.this.tick(b);
             }
 
@@ -211,7 +217,7 @@ public class ImprovementForge extends SlimefunItem implements EnergyNetComponent
     }
 
     protected void tick(@Nonnull Block b) {
-        BlockMenu inv = BlockStorage.getInventory(b);
+        BlockMenu inv = SlimefunBlockDataUtil.getMenu(b);
 
         if (isProcessing(b)) {
             int timeleft = progress.get(b);
@@ -220,11 +226,11 @@ public class ImprovementForge extends SlimefunItem implements EnergyNetComponent
                 ChestMenuUtils.updateProgressbar(inv, 22, timeleft, processing.get(b).getTicks(), getProgressBar());
 
                 if (isChargeable()) {
-                    if (getCharge(b.getLocation()) < getEnergyConsumption()) {
+                    if (getChargeLong(b.getLocation()) < getEnergyConsumption()) {
                         return;
                     }
 
-                    removeCharge(b.getLocation(), getEnergyConsumption());
+                    removeCharge(b.getLocation(), (long) getEnergyConsumption());
                 }
                 progress.put(b, timeleft - 1);
             }
