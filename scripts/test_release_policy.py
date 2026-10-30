@@ -7,7 +7,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parent.parent
 PUBLISH = ROOT / "scripts" / "publish_immutable_release.sh"
-WORKFLOW = ROOT / ".github" / "workflows" / "build.yml"
+WORKFLOW = ROOT / ".github" / "workflows" / "maven.yml"
 SHA = "a" * 40
 
 
