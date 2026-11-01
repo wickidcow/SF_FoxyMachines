@@ -34,6 +34,9 @@ jobs:
           java-version: '25'
           cache: maven
 
+      - name: Install checksum-verified Apache Maven 3.10.0
+        run: bash scripts/install_maven_3_10.sh
+
       - name: Verify release metadata
         shell: bash
         run: |
