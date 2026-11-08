@@ -99,13 +99,22 @@ public final class ChunkLoaderPolicyService implements Listener {
                         && (key.z() >> 4) == chunkZ);
     }
 
-    public static void register(Block block, UUID owner) {
+    public static boolean register(Block block, UUID owner) {
         if (instance == null) {
-            return;
+            return false;
         }
-        instance.placed.put(BlockKey.of(block), owner);
-        instance.saveRegistry();
+        BlockKey key = BlockKey.of(block);
+        UUID previous = instance.placed.put(key, owner);
+        if (!instance.saveRegistry()) {
+            if (previous == null) {
+                instance.placed.remove(key);
+            } else {
+                instance.placed.put(key, previous);
+            }
+            return false;
+        }
         instance.refresh();
+        return true;
     }
 
     /**
@@ -120,12 +129,17 @@ public final class ChunkLoaderPolicyService implements Listener {
         if (instance == null) {
             return false;
         }
-        boolean found = instance.placed.remove(BlockKey.of(block)) != null;
-        if (found) {
-            instance.saveRegistry();
-            instance.refresh();
+        BlockKey key = BlockKey.of(block);
+        UUID previous = instance.placed.remove(key);
+        if (previous == null) {
+            return false;
         }
-        return found;
+        if (!instance.saveRegistry()) {
+            instance.placed.put(key, previous);
+            return false;
+        }
+        instance.refresh();
+        return true;
     }
 
     /**
@@ -303,8 +317,15 @@ public final class ChunkLoaderPolicyService implements Listener {
                     // force-loaded flag, even for a previously recorded block.
                     if (!previouslyRecorded) {
                         placed.put(key, owner);
-                        saveRegistry();
+                        if (!saveRegistry()) {
+                            placed.remove(key);
+                            plugin.getLogger().severe("Preserving old force-loaded flag at "
+                                    + block.getLocation() + " because its owner record could not be saved.");
+                            continue;
+                        }
                     }
+                    // Never release historical vanilla force-loading before
+                    // the verified loader ownership is durable on disk.
                     chunk.setForceLoaded(false);
                     imported++;
                 }
@@ -411,7 +432,7 @@ public final class ChunkLoaderPolicyService implements Listener {
         }
     }
 
-    private void saveRegistry() {
+    private boolean saveRegistry() {
         Properties entries = new Properties();
         for (var entry : placed.entrySet()) {
             entries.setProperty(entry.getKey().serialize(), entry.getValue().toString());
@@ -423,9 +444,11 @@ public final class ChunkLoaderPolicyService implements Listener {
                 entries.store(out, "FoxyMachines chunk loader positions (Slimefun IDs preserved)");
             }
             Files.move(pending, registryFile, StandardCopyOption.REPLACE_EXISTING);
+            return true;
         } catch (IOException error) {
             plugin.getLogger().log(Level.SEVERE,
                     "Cannot persist FoxyMachines chunk-loader registry; leaving live blocks intact.", error);
+            return false;
         }
     }
 
