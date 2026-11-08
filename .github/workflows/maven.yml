@@ -69,6 +69,15 @@ jobs:
             -Dpackaging=jar \
             -DgeneratePom=true
 
+      - name: Verify shared chunk-loader policy unit tests (Paper 1.21.11 floor)
+        run: >-
+          mvn -B
+          -Dpaper.version=1.21.11-R0.1-SNAPSHOT
+          -Dslimefun.groupId=com.github.wickidcow
+          -Dslimefun.artifactId=Slimefun-Legacy
+          -Dslimefun.version=${SLIMEFUN_LEGACY_VERSION}
+          test
+
       - name: Verify Paper 1.21.11 compilation
         run: >-
           mvn -B -Dmaven.test.skip=true
