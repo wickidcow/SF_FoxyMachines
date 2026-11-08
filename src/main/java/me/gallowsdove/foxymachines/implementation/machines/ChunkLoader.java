@@ -65,10 +65,15 @@ public class ChunkLoader extends SlimefunItem {
                                 "Could not parse historical Chunk Loader owner; leaving owner count unchanged.");
                     }
                     if (!managed && b.getChunk().isForceLoaded()) {
-                        // Historical FoxyMachines blocks used a vanilla forced flag.
-                        // Only clear it when this actual block is deliberately broken,
-                        // never as part of an unverified global mode switch.
-                        b.getChunk().setForceLoaded(false);
+                        // A legacy vanilla force-load flag has no recorded owner.
+                        // Even a removed FoxyMachines block does not prove the
+                        // flag is unused by an administrator or another plugin.
+                        // Do NOT clear it implicitly. The operator can review
+                        // remaining flags and use the explicit audited migration.
+                        FoxyMachines.getInstance().getLogger().warning(
+                                "Old FoxyMachines loader broken at " + b.getLocation()
+                                        + "; retained ambiguous vanilla force-loaded chunk flag. "
+                                        + "Audit it before using /forceload remove.");
                     }
                     SlimefunBlockDataUtil.remove(b);
                 }
