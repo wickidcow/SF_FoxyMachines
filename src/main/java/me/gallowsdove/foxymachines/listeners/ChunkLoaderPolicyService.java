@@ -30,6 +30,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -298,6 +299,50 @@ public final class ChunkLoaderPolicyService implements Listener {
         if (imported > 0) {
             plugin.getLogger().info("Migrated " + imported + " verified FoxyMachines force-loaded "
                     + "chunks to plugin-owned ticket records.");
+            refresh();
+        }
+    }
+
+    /**
+     * A stored position must never hold a ticket forever after an external
+     * block editor or explosion removes the real Slimefun block. Do not load
+     * chunks just to run this check; only validate an already-loaded chunk.
+     */
+    @EventHandler
+    public void onChunkLoad(ChunkLoadEvent event) {
+        Chunk chunk = event.getChunk();
+        boolean tracked = placed.keySet().stream().anyMatch(key ->
+                key.worldId().equals(chunk.getWorld().getUID())
+                        && key.x() >> 4 == chunk.getX()
+                        && key.z() >> 4 == chunk.getZ());
+        if (tracked) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> validateLoadedChunk(chunk), 20L);
+        }
+    }
+
+    private void validateLoadedChunk(Chunk chunk) {
+        boolean changed = false;
+        for (BlockKey key : new HashSet<>(placed.keySet())) {
+            if (!key.worldId().equals(chunk.getWorld().getUID())
+                    || (key.x() >> 4) != chunk.getX() || (key.z() >> 4) != chunk.getZ()) {
+                continue;
+            }
+            if (!chunk.isLoaded()) {
+                continue;
+            }
+            Block block = chunk.getWorld().getBlockAt(key.x(), key.y(), key.z());
+            String actualId = SlimefunBlockDataUtil.getId(block);
+            // A temporarily missing block-data cache is not proof of deletion.
+            if (block.getType() != Material.BEACON
+                    || actualId != null && !"CHUNK_LOADER".equals(actualId)) {
+                placed.remove(key);
+                changed = true;
+                plugin.getLogger().warning("Released stale FoxyMachines Chunk Loader record at "
+                        + block.getLocation() + " without touching vanilla forced chunks.");
+            }
+        }
+        if (changed) {
+            saveRegistry();
             refresh();
         }
     }
