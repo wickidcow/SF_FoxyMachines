@@ -350,16 +350,18 @@ public final class ChunkLoaderPolicyService implements Listener {
                     // the current policy calls for continuous loading, acquire
                     // our plugin ticket FIRST so machines do not temporarily
                     // drop out of memory during the one-time migration.
-                    if (activePolicy.shouldTicket(!Bukkit.getOnlinePlayers().isEmpty())) {
+                    boolean anyPlayerOnline = !Bukkit.getOnlinePlayers().isEmpty();
+                    if (activePolicy.shouldTicket(anyPlayerOnline)) {
                         refresh();
-                        ChunkKey chunkKey = new ChunkKey(
-                                world.getUID(), chunk.getX(), chunk.getZ());
-                        if (!ticketed.contains(chunkKey)) {
-                            plugin.getLogger().severe("Preserving old force-loaded flag at "
-                                    + block.getLocation()
-                                    + " because a replacement FoxyMachines ticket was not acquired.");
-                            continue;
-                        }
+                    }
+                    ChunkKey chunkKey = new ChunkKey(
+                            world.getUID(), chunk.getX(), chunk.getZ());
+                    if (!activePolicy.canReleaseAuditedLegacyFlag(
+                            anyPlayerOnline, ticketed.contains(chunkKey))) {
+                        plugin.getLogger().severe("Preserving old force-loaded flag at "
+                                + block.getLocation()
+                                + " because a replacement FoxyMachines ticket was not acquired.");
+                        continue;
                     }
                     chunk.setForceLoaded(false);
                     imported++;
