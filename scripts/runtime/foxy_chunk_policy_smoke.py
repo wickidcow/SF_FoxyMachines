@@ -75,7 +75,7 @@ def set_mode(config: Path, mode: str):
     # Bukkit may rewrite YAML scalars (including booleans) on shutdown.
     # This harness intentionally replaces the field with a valid explicit
     # policy on the next restart; production parsing is tested separately.
-    matches = list(re.finditer(r"(?m)^chunk-loading-mode:[^\\r\\n]*$", text))
+    matches = list(re.finditer(r"(?m)^chunk-loading-mode:[^\r\n]*$", text))
     if len(matches) != 1:
         raise RuntimeError("FoxyMachines config must contain exactly one independent policy field")
     text = text[:matches[0].start()] + f"chunk-loading-mode: {mode}" + text[matches[0].end():]
