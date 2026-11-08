@@ -81,8 +81,22 @@ public class ChunkLoader extends SlimefunItem {
                                         .getOrDefault(key, PersistentDataType.INTEGER, 0);
                                 player.getPersistentDataContainer().set(
                                         key, PersistentDataType.INTEGER, Math.max(0, count - 1));
-                            } else {
-                                ChunkLoaderPolicyService.deferOfflineOwnerDecrement(ownerId);
+                            } else if (!ChunkLoaderPolicyService.deferOfflineOwnerDecrement(ownerId)) {
+                                // A failed durable journal write cannot be
+                                // treated as a successful quota refund.
+                                // Preserve the placed loader and its owner
+                                // record instead of silently losing the
+                                // offline player's adjustment.
+                                if (managed && !ChunkLoaderPolicyService.register(b, ownerId)) {
+                                    FoxyMachines.getInstance().getLogger().severe(
+                                            "Unable to restore owner registry after offline quota journal failure at "
+                                                    + b.getLocation() + ". Operator recovery required.");
+                                }
+                                e.setCancelled(true);
+                                FoxyMachines.getInstance().getLogger().severe(
+                                        "Chunk Loader break blocked at " + b.getLocation()
+                                                + " because its offline owner's quota journal could not be saved.");
+                                return;
                             }
                         }
                     } catch (IllegalArgumentException invalidOwner) {
