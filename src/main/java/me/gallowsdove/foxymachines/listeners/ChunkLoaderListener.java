@@ -35,6 +35,13 @@ public class ChunkLoaderListener implements Listener {
         }
 
         Block b = e.getBlockPlaced();
+        if (!ChunkLoaderPolicyService.canPlace()) {
+            e.setCancelled(true);
+            p.sendMessage(Component.text(
+                    "FoxyMachines Chunk Loader is disabled by the Slimefun Legacy server setting.",
+                    NamedTextColor.LIGHT_PURPLE));
+            return;
+        }
         if (b.getChunk().isForceLoaded()) {
             e.setCancelled(true);
             p.sendMessage(Component.text("This chunk is already loaded!", NamedTextColor.LIGHT_PURPLE));
@@ -62,7 +69,9 @@ public class ChunkLoaderListener implements Listener {
         }
 
         p.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, i);
-        b.getChunk().setForceLoaded(true);
+        // New placements use FoxyMachines-owned removable plugin tickets.
+        // Old vanilla force-loaded flags are separately audited and migrated.
+        ChunkLoaderPolicyService.register(b, p.getUniqueId());
         SlimefunBlockDataUtil.setValue(b, "owner", p.getUniqueId().toString());
     }
 }
