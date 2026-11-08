@@ -68,10 +68,17 @@ public class ChunkLoaderListener implements Listener {
             return;
         }
 
+        // The new loader must be durably registered before charging the
+        // owner's quota. If its registry cannot be saved (e.g. a full disk),
+        // cancel placement rather than creating an untracked block.
+        if (!ChunkLoaderPolicyService.register(b, p.getUniqueId())) {
+            e.setCancelled(true);
+            p.sendMessage(Component.text(
+                    "Could not save Chunk Loader ownership; placement cancelled. Check server logs.",
+                    NamedTextColor.RED));
+            return;
+        }
         p.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, i);
-        // New placements use FoxyMachines-owned removable plugin tickets.
-        // Old vanilla force-loaded flags are separately audited and migrated.
-        ChunkLoaderPolicyService.register(b, p.getUniqueId());
         SlimefunBlockDataUtil.setValue(b, "owner", p.getUniqueId().toString());
     }
 }
