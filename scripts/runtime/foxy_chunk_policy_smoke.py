@@ -54,12 +54,14 @@ def fetch_paper(mc_version: str, destination: Path) -> str:
     return str(stable["id"])
 
 
-def build_probe(root: Path, foxy: Path, legacy: Path, paper_api: Path, output: Path):
+def build_probe(root: Path, foxy: Path, legacy: Path, paper_api: Path,
+                resolved_classpath: str, output: Path):
     classes = root / "probe-classes"
     classes.mkdir(parents=True)
     source = Path("scripts/runtime/FoxyTicketProbe.java")
     subprocess.run(["javac", "--release", "21", "-cp",
-                    os.pathsep.join(str(path) for path in (foxy, legacy, paper_api)),
+                    os.pathsep.join(str(path) for path in (foxy, legacy, paper_api))
+                    + os.pathsep + resolved_classpath,
                     "-d", str(classes), str(source)], check=True, timeout=120)
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for clazz in classes.rglob("*.class"):
@@ -128,11 +130,16 @@ def main():
     parser.add_argument("--foxy-jar", type=Path, required=True)
     parser.add_argument("--slimefun-jar", type=Path, required=True)
     parser.add_argument("--paper-api-jar", type=Path, required=True)
+    parser.add_argument("--compile-classpath-file", type=Path, required=True)
     parser.add_argument("--minecraft", choices=["1.21.11", "26.3"], required=True)
     args = parser.parse_args()
 
     foxy, legacy, api = (v.resolve(strict=True) for v in
                           (args.foxy_jar, args.slimefun_jar, args.paper_api_jar))
+    extra_classpath = args.compile_classpath_file.resolve(strict=True).read_text(
+        encoding="utf-8").strip()
+    if not extra_classpath:
+        raise RuntimeError("Maven's resolved native-probe classpath is empty")
     repo = Path.cwd().resolve()
     base = repo / "build" / "foxy-native-ticket-probe"
     if base.is_symlink() or base.parent != repo / "build":
@@ -149,7 +156,8 @@ def main():
     (root / "plugins").mkdir()
     shutil.copyfile(foxy, root / "plugins" / "FoxyMachines.jar")
     shutil.copyfile(legacy, root / "plugins" / "Slimefun-Legacy.jar")
-    build_probe(root, foxy, legacy, api, root / "plugins" / "FoxyTicketProbe.jar")
+    build_probe(root, foxy, legacy, api, extra_classpath,
+                root / "plugins" / "FoxyTicketProbe.jar")
 
     (root / "eula.txt").write_text("eula=true\n", encoding="utf-8")
     (root / "server.properties").write_text(
