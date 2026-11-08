@@ -65,4 +65,24 @@ class ChunkLoaderPolicyTest {
         assertThrows(IllegalArgumentException.class,
                 () -> ChunkLoaderPolicyService.validatedRegistryEntryCount(duplicate));
     }
+
+    @Test
+    void auditedLegacyForceFlagIsRetainedUntilAnyRequiredTicketIsAcquired() {
+        // ONLINE: with players present, preserve old force-load until a
+        // Foxy-owned plugin ticket is confirmed on the identical chunk.
+        assertFalse(ChunkLoaderPolicy.ONLINE.canReleaseAuditedLegacyFlag(true, false));
+        assertTrue(ChunkLoaderPolicy.ONLINE.canReleaseAuditedLegacyFlag(true, true));
+
+        // ONLINE: no players means no ticket is required; an audited,
+        // operator-approved conversion may release the old persistent flag.
+        assertTrue(ChunkLoaderPolicy.ONLINE.canReleaseAuditedLegacyFlag(false, false));
+
+        // ALWAYS: the ticket is mandatory even at zero connected players.
+        assertFalse(ChunkLoaderPolicy.ALWAYS.canReleaseAuditedLegacyFlag(false, false));
+        assertTrue(ChunkLoaderPolicy.ALWAYS.canReleaseAuditedLegacyFlag(false, true));
+
+        // OFF: only deliberate audited migration may clear old force loads.
+        assertTrue(ChunkLoaderPolicy.OFF.canReleaseAuditedLegacyFlag(false, false));
+        assertTrue(ChunkLoaderPolicy.OFF.canReleaseAuditedLegacyFlag(true, false));
+    }
 }
