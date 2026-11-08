@@ -52,6 +52,9 @@ public final class ChunkLoaderPolicyService implements Listener {
     private final Map<BlockKey, UUID> placed = new HashMap<>();
     private final Set<ChunkKey> ticketed = new HashSet<>();
     private ChunkLoaderPolicy activePolicy = ChunkLoaderPolicy.ONLINE;
+    // Never replace a corrupt or unreadable historical registry with an
+    // empty one. Fail closed until an operator restores the original file.
+    private boolean registryHealthy = true;
 
     private ChunkLoaderPolicyService(FoxyMachines plugin) {
         this.plugin = plugin;
@@ -80,11 +83,15 @@ public final class ChunkLoaderPolicyService implements Listener {
     }
 
     public static boolean canPlace() {
-        if (instance == null) {
+        if (instance == null || !instance.registryHealthy) {
             return false;
         }
         instance.refresh();
         return instance.activePolicy != ChunkLoaderPolicy.OFF;
+    }
+
+    public static boolean isRegistryHealthy() {
+        return instance != null && instance.registryHealthy;
     }
 
     public static boolean isLoaderChunkTracked(Block block) {
@@ -100,7 +107,7 @@ public final class ChunkLoaderPolicyService implements Listener {
     }
 
     public static boolean register(Block block, UUID owner) {
-        if (instance == null) {
+        if (instance == null || !instance.registryHealthy) {
             return false;
         }
         BlockKey key = BlockKey.of(block);
@@ -126,7 +133,7 @@ public final class ChunkLoaderPolicyService implements Listener {
     }
 
     public static boolean unregister(Block block) {
-        if (instance == null) {
+        if (instance == null || !instance.registryHealthy) {
             return false;
         }
         BlockKey key = BlockKey.of(block);
@@ -279,6 +286,11 @@ public final class ChunkLoaderPolicyService implements Listener {
      * opt-in is required to clear their old vanilla force-loaded flags.
      */
     private void discoverOldForceLoaded() {
+        if (!registryHealthy) {
+            plugin.getLogger().severe("Skipped historical Chunk Loader migration because its "
+                    + "saved owner registry could not be safely read.");
+            return;
+        }
         boolean migrate = plugin.getConfig().getBoolean("migrate-legacy-force-loaded-chunks", false);
         int found = 0;
         int imported = 0;
@@ -412,27 +424,56 @@ public final class ChunkLoaderPolicyService implements Listener {
         saveRegistry();
     }
 
+    /**
+     * Parse the complete registry before applying any record. A single bad
+     * entry must not allow a later shutdown or placement to erase the owner's
+     * remaining, valid historical loader records.
+     */
+    private static Map<BlockKey, UUID> parseRegistryEntries(Properties entries) {
+        Map<BlockKey, UUID> parsed = new HashMap<>();
+        for (String raw : entries.stringPropertyNames()) {
+            BlockKey position = BlockKey.parse(raw);
+            UUID owner = UUID.fromString(entries.getProperty(raw));
+            if (parsed.putIfAbsent(position, owner) != null) {
+                throw new IllegalArgumentException("Duplicate recorded position: " + raw);
+            }
+        }
+        return parsed;
+    }
+
+    /** Pure structural validation for the no-loss persistence regression. */
+    static int validatedRegistryEntryCount(Properties entries) {
+        return parseRegistryEntries(entries).size();
+    }
+
     private void loadRegistry() {
         if (!Files.isRegularFile(registryFile)) {
+            if (Files.exists(registryFile)) {
+                registryHealthy = false;
+                plugin.getLogger().severe("FoxyMachines Chunk Loader registry is not a regular file: "
+                        + registryFile + ". Not overwriting it.");
+            }
             return;
         }
         Properties entries = new Properties();
         try (InputStream in = Files.newInputStream(registryFile)) {
             entries.load(in);
-            for (String key : entries.stringPropertyNames()) {
-                try {
-                    placed.put(BlockKey.parse(key), UUID.fromString(entries.getProperty(key)));
-                } catch (RuntimeException invalid) {
-                    plugin.getLogger().warning("Ignoring invalid chunk-loader registry entry " + key);
-                }
-            }
-        } catch (IOException error) {
+            placed.putAll(parseRegistryEntries(entries));
+        } catch (IOException | IllegalArgumentException error) {
+            placed.clear();
+            registryHealthy = false;
             plugin.getLogger().log(Level.SEVERE,
-                    "Cannot load historical FoxyMachines loader records: " + registryFile, error);
+                    "Cannot safely load historical FoxyMachines Chunk Loader records from "
+                            + registryFile + "; refusing placements, breaking and legacy migration "
+                            + "until the original ownership file is repaired.", error);
         }
     }
 
     private boolean saveRegistry() {
+        if (!registryHealthy) {
+            plugin.getLogger().severe("Refusing to overwrite unreadable Chunk Loader owner registry.");
+            return false;
+        }
         Properties entries = new Properties();
         for (var entry : placed.entrySet()) {
             entries.setProperty(entry.getKey().serialize(), entry.getValue().toString());
