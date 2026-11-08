@@ -71,7 +71,7 @@ def build_probe(root: Path, foxy: Path, legacy: Path, paper_api: Path,
 
 def set_mode(config: Path, mode: str):
     text = config.read_text(encoding="utf-8")
-    match = list(re.finditer(r"(?m)^chunk-loading-mode:[ \t]*(ONLINE|ALWAYS|OFF)[ \t]*$", text))
+    # Bukkit YAML may quote OFF when saving config (YAML 1.1 boolean token).\n    # Accept only a single exact scalar, optionally enclosed in matching quotes.\n    match = list(re.finditer(\n        r"(?m)^chunk-loading-mode:[ \\t]*(?:ONLINE|ALWAYS|OFF|\\\"(?:ONLINE|ALWAYS|OFF)\\\"|\u0027(?:ONLINE|ALWAYS|OFF)\u0027)[ \\t]*$",\n        text,\n    ))
     if len(match) != 1:
         raise RuntimeError("FoxyMachines config must contain exactly one independent policy field")
     text = text[:match[0].start()] + f"chunk-loading-mode: {mode}" + text[match[0].end():]
