@@ -1,6 +1,7 @@
 package audit;
 
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
+import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -44,6 +45,12 @@ public final class FoxyTicketProbe extends JavaPlugin {
             Block block = world.getBlockAt(BLOCK_X, BLOCK_Y, BLOCK_Z);
             if (phase.equals("ALWAYS_FIRST")) {
                 block.setType(Material.BEACON);
+                // Represent a real registered Slimefun loader, not merely a
+                // vanilla beacon with a Foxy ownership file entry.
+                BlockStorage.store(block, "CHUNK_LOADER");
+                if (!"CHUNK_LOADER".equals(BlockStorage.checkID(block))) {
+                    throw new IllegalStateException("Real Slimefun CHUNK_LOADER block ID was not stored");
+                }
                 if (!ChunkLoaderPolicyService.register(block, OWNER)) {
                     throw new IllegalStateException("Failed to persist real new-loader ownership");
                 }
