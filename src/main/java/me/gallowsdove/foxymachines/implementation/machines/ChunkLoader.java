@@ -46,19 +46,28 @@ public class ChunkLoader extends SlimefunItem {
             public void onPlayerBreak(@Nonnull BlockBreakEvent e, @Nonnull ItemStack item, @Nonnull List<ItemStack> drops) {
                 Block b = e.getBlock();
                 String owner = SlimefunBlockDataUtil.getValue(b, "owner");
+                UUID registeredOwner = ChunkLoaderPolicyService.getRegisteredOwner(b);
                 boolean managed = ChunkLoaderPolicyService.unregister(b);
-                if (owner != null) {
+                if (owner != null || registeredOwner != null) {
                     try {
-                        UUID ownerId = UUID.fromString(owner);
-                        NamespacedKey key = new NamespacedKey(FoxyMachines.getInstance(), "chunkloaders");
-                        Player player = Bukkit.getPlayer(ownerId);
-                        if (player != null) {
-                            int count = player.getPersistentDataContainer()
-                                    .getOrDefault(key, PersistentDataType.INTEGER, 0);
-                            player.getPersistentDataContainer().set(
-                                    key, PersistentDataType.INTEGER, Math.max(0, count - 1));
+                        UUID ownerId = owner == null ? registeredOwner : UUID.fromString(owner);
+                        if (registeredOwner != null && !registeredOwner.equals(ownerId)) {
+                            // A stale or conflicting record must never decrement
+                            // another player's persistent placement quota.
+                            FoxyMachines.getInstance().getLogger().warning(
+                                    "Conflicting stored owner at " + b.getLocation()
+                                            + "; left player quota unchanged for operator review.");
                         } else {
-                            ChunkLoaderPolicyService.deferOfflineOwnerDecrement(ownerId);
+                            NamespacedKey key = new NamespacedKey(FoxyMachines.getInstance(), "chunkloaders");
+                            Player player = Bukkit.getPlayer(ownerId);
+                            if (player != null) {
+                                int count = player.getPersistentDataContainer()
+                                        .getOrDefault(key, PersistentDataType.INTEGER, 0);
+                                player.getPersistentDataContainer().set(
+                                        key, PersistentDataType.INTEGER, Math.max(0, count - 1));
+                            } else {
+                                ChunkLoaderPolicyService.deferOfflineOwnerDecrement(ownerId);
+                            }
                         }
                     } catch (IllegalArgumentException invalidOwner) {
                         FoxyMachines.getInstance().getLogger().warning(
