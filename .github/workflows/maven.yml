@@ -181,6 +181,20 @@ jobs:
             --compile-classpath-file build/native-probe-classpath.txt \
             --minecraft 1.21.11
 
+      - name: Native Paper 26.2 zero-player ticket and restart policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          PAPER_API_JAR="$(find "$HOME/.m2/repository/io/papermc/paper/paper-api/1.21.11-R0.1-SNAPSHOT" \
+            -maxdepth 1 -name 'paper-api-*.jar' ! -name '*sources*' ! -name '*javadoc*' \
+            -print -quit)"
+          python3 scripts/runtime/foxy_chunk_policy_smoke.py \
+            --foxy-jar "dist/${OUTPUT_NAME}" \
+            --slimefun-jar legacy-deps/Slimefun-Legacy4.1.79.jar \
+            --paper-api-jar "$PAPER_API_JAR" \
+            --compile-classpath-file build/native-probe-classpath.txt \
+            --minecraft 26.2
+
       - name: Native Paper 26.3 zero-player ticket and restart policy
         shell: bash
         run: |
