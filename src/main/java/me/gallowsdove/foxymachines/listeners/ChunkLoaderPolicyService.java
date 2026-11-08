@@ -31,11 +31,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.plugin.Plugin;
 
 /**
- * FoxyMachines-only ticket ownership. Reads the same Slimefun Legacy mode as
- * Resonance Beacon, but never clears unrelated vanilla force-loaded flags.
+ * FoxyMachines-only ticket ownership and independent administrator policy.
+ * It never reads or changes Slimefun Legacy's Resonance Beacon settings.
  *
  * Old FoxyMachines used persistent Chunk#setForceLoaded. A first-run import
  * must be explicitly enabled after an operator audits possible third-party
@@ -43,10 +42,7 @@ import org.bukkit.plugin.Plugin;
  */
 public final class ChunkLoaderPolicyService implements Listener {
 
-    private static final String POLICY_PATH =
-            "SlimefunLegacyAddition.PoweredBeacon.chunk-loading-mode";
-    private static final String LEGACY_PATH =
-            "SlimefunLegacyAddition.PoweredBeacon.chunk-loading-enabled";
+    private static final String POLICY_PATH = "chunk-loading-mode";
     private static ChunkLoaderPolicyService instance;
 
     private final FoxyMachines plugin;
@@ -177,24 +173,22 @@ public final class ChunkLoaderPolicyService implements Listener {
     }
 
     private ChunkLoaderPolicy readPolicy() {
-        Plugin core = Bukkit.getPluginManager().getPlugin("Slimefun");
-        if (core == null) {
-            return ChunkLoaderPolicy.OFF;
-        }
-        Path path = core.getDataFolder().toPath().resolve("configSFLAddons.yml");
+        // FoxyMachines has its own config and does not inherit the Resonance
+        // Beacon's switch. Reading the file also picks up intentional edits
+        // without calling reloadConfig() on unrelated addon settings.
+        Path path = plugin.getDataFolder().toPath().resolve("config.yml");
         if (!Files.isRegularFile(path)) {
             return ChunkLoaderPolicy.ONLINE;
         }
         var config = YamlConfiguration.loadConfiguration(path.toFile());
-        return ChunkLoaderPolicy.parse(
-                config.getString(POLICY_PATH), config.getBoolean(LEGACY_PATH, true));
+        return ChunkLoaderPolicy.parse(config.getString(POLICY_PATH), true);
     }
 
     private void refresh() {
         ChunkLoaderPolicy requested = readPolicy();
         if (requested != activePolicy) {
             activePolicy = requested;
-            plugin.getLogger().info("FoxyMachines Chunk Loader follows Slimefun Legacy mode " + requested);
+            plugin.getLogger().info("FoxyMachines independent Chunk Loader policy: " + requested);
         }
         SlimefunItem item = SlimefunItem.getById("CHUNK_LOADER");
         if (item != null && item.getAddon() == plugin) {
