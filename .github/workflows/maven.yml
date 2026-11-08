@@ -140,6 +140,51 @@ jobs:
           archive: false
           if-no-files-found: error
 
+      - name: Download released Slimefun Legacy 4.1.79 for native Paper fixture
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download v4.1.79 --repo wickidcow/Slimefun-Legacy \
+            --pattern Slimefun-Legacy4.1.79.jar --dir legacy-deps
+          test -s legacy-deps/Slimefun-Legacy4.1.79.jar
+
+      - name: Verify native ticket probe source and Maven Paper API fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/runtime/foxy_chunk_policy_smoke.py
+          find "$HOME/.m2/repository/io/papermc/paper/paper-api/1.21.11-R0.1-SNAPSHOT" \
+            -maxdepth 1 -name 'paper-api-*.jar' ! -name '*sources*' ! -name '*javadoc*' \
+            -print -quit | grep -q .
+
+      - name: Native Paper 1.21.11 zero-player ticket and restart policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          PAPER_API_JAR="$(find "$HOME/.m2/repository/io/papermc/paper/paper-api/1.21.11-R0.1-SNAPSHOT" \
+            -maxdepth 1 -name 'paper-api-*.jar' ! -name '*sources*' ! -name '*javadoc*' \
+            -print -quit)"
+          python3 scripts/runtime/foxy_chunk_policy_smoke.py \
+            --foxy-jar "dist/${OUTPUT_NAME}" \
+            --slimefun-jar legacy-deps/Slimefun-Legacy4.1.79.jar \
+            --paper-api-jar "$PAPER_API_JAR" \
+            --minecraft 1.21.11
+
+      - name: Native Paper 26.3 zero-player ticket and restart policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          PAPER_API_JAR="$(find "$HOME/.m2/repository/io/papermc/paper/paper-api/1.21.11-R0.1-SNAPSHOT" \
+            -maxdepth 1 -name 'paper-api-*.jar' ! -name '*sources*' ! -name '*javadoc*' \
+            -print -quit)"
+          python3 scripts/runtime/foxy_chunk_policy_smoke.py \
+            --foxy-jar "dist/${OUTPUT_NAME}" \
+            --slimefun-jar legacy-deps/Slimefun-Legacy4.1.79.jar \
+            --paper-api-jar "$PAPER_API_JAR" \
+            --minecraft 26.3
+
       - name: Publish distinct immutable release (manual exact-tag only)
         if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v')
         env:
