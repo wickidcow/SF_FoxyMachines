@@ -48,6 +48,15 @@ public class ChunkLoader extends SlimefunItem {
                 String owner = SlimefunBlockDataUtil.getValue(b, "owner");
                 UUID registeredOwner = ChunkLoaderPolicyService.getRegisteredOwner(b);
                 boolean managed = ChunkLoaderPolicyService.unregister(b);
+                if (registeredOwner != null && !managed) {
+                    // Preserve the physical loader and existing quota if
+                    // its owner registry could not be safely persisted.
+                    e.setCancelled(true);
+                    FoxyMachines.getInstance().getLogger().severe(
+                            "Cancelled Chunk Loader break at " + b.getLocation()
+                                    + ": the owner registry update failed.");
+                    return;
+                }
                 if (owner != null || registeredOwner != null) {
                     try {
                         UUID ownerId = owner == null ? registeredOwner : UUID.fromString(owner);
