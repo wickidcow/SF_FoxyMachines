@@ -20,4 +20,13 @@ public enum ChunkLoaderPolicy {
     boolean shouldTicket(boolean anyPlayerOnline) {
         return this == ALWAYS || this == ONLINE && anyPlayerOnline;
     }
+
+    /**
+     * A manually audited historical vanilla force-load flag may be dropped
+     * only if the policy does not require a replacement ticket right now, or
+     * after a Foxy-owned replacement ticket has actually been acquired.
+     */
+    boolean canReleaseAuditedLegacyFlag(boolean anyPlayerOnline, boolean replacementTicketHeld) {
+        return !shouldTicket(anyPlayerOnline) || replacementTicketHeld;
+    }
 }
