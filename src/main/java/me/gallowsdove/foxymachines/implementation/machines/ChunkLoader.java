@@ -9,6 +9,7 @@ import io.github.thebusybiscuit.slimefun4.core.handlers.BlockUseHandler;
 import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
+import me.gallowsdove.foxymachines.listeners.ChunkLoaderPolicyService;
 import me.gallowsdove.foxymachines.utils.SlimefunBlockDataUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -45,14 +46,30 @@ public class ChunkLoader extends SlimefunItem {
             public void onPlayerBreak(@Nonnull BlockBreakEvent e, @Nonnull ItemStack item, @Nonnull List<ItemStack> drops) {
                 Block b = e.getBlock();
                 String owner = SlimefunBlockDataUtil.getValue(b, "owner");
+                boolean managed = ChunkLoaderPolicyService.unregister(b);
                 if (owner != null) {
-                    NamespacedKey key = new NamespacedKey(FoxyMachines.getInstance(), "chunkloaders");
-                    Player p = Bukkit.getPlayer(UUID.fromString(owner));
-
-                    int i = p.getPersistentDataContainer().get(key, PersistentDataType.INTEGER) - 1;
-                    p.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, i);
-
-                    b.getChunk().setForceLoaded(false);
+                    try {
+                        UUID ownerId = UUID.fromString(owner);
+                        NamespacedKey key = new NamespacedKey(FoxyMachines.getInstance(), "chunkloaders");
+                        Player player = Bukkit.getPlayer(ownerId);
+                        if (player != null) {
+                            int count = player.getPersistentDataContainer()
+                                    .getOrDefault(key, PersistentDataType.INTEGER, 0);
+                            player.getPersistentDataContainer().set(
+                                    key, PersistentDataType.INTEGER, Math.max(0, count - 1));
+                        } else {
+                            ChunkLoaderPolicyService.deferOfflineOwnerDecrement(ownerId);
+                        }
+                    } catch (IllegalArgumentException invalidOwner) {
+                        FoxyMachines.getInstance().getLogger().warning(
+                                "Could not parse historical Chunk Loader owner; leaving owner count unchanged.");
+                    }
+                    if (!managed && b.getChunk().isForceLoaded()) {
+                        // Historical FoxyMachines blocks used a vanilla forced flag.
+                        // Only clear it when this actual block is deliberately broken,
+                        // never as part of an unverified global mode switch.
+                        b.getChunk().setForceLoaded(false);
+                    }
                     SlimefunBlockDataUtil.remove(b);
                 }
 
