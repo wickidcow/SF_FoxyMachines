@@ -56,6 +56,9 @@ public final class ChunkLoaderPolicyService implements Listener {
     // Never replace a corrupt or unreadable historical registry with an
     // empty one. Fail closed until an operator restores the original file.
     private boolean registryHealthy = true;
+    // A damaged offline quota journal must not be partially loaded and
+    // subsequently overwritten, nor should its owner counters be consumed.
+    private boolean deferredOwnersHealthy = true;
 
     private ChunkLoaderPolicyService(FoxyMachines plugin) {
         this.plugin = plugin;
@@ -95,7 +98,8 @@ public final class ChunkLoaderPolicyService implements Listener {
     }
 
     public static boolean isRegistryHealthy() {
-        return instance != null && instance.registryHealthy;
+        return instance != null && instance.registryHealthy
+                && instance.deferredOwnersHealthy;
     }
 
     public static boolean isLoaderChunkTracked(Block block) {
@@ -154,71 +158,139 @@ public final class ChunkLoaderPolicyService implements Listener {
     }
 
     /**
-     * Player PDC is mutable only while the owner is online. Preserve any
-     * offline break's quota decrement until the player's next login.
+     * Persist the cumulative break total before an offline owner's next
+     * login. A cumulative journal (never deleted on login) is idempotent
+     * when paired with the player's last-applied total in the same PDC.
      */
-    public static void deferOfflineOwnerDecrement(UUID owner) {
-        if (instance == null) {
-            return;
+    public static boolean deferOfflineOwnerDecrement(UUID owner) {
+        if (instance == null || !instance.deferredOwnersHealthy) {
+            return false;
         }
-        instance.pendingOwnerDecrements.merge(owner, 1, Integer::sum);
-        instance.saveDeferredOwners();
+        int old = instance.pendingOwnerDecrements.getOrDefault(owner, 0);
+        final int updated;
+        try {
+            updated = OfflineChunkLoaderQuota.nextJournalTotal(old);
+        } catch (ArithmeticException | IllegalArgumentException invalid) {
+            instance.plugin.getLogger().log(Level.SEVERE,
+                    "Invalid cumulative offline loader count for " + owner, invalid);
+            return false;
+        }
+        instance.pendingOwnerDecrements.put(owner, updated);
+        if (!instance.saveDeferredOwners()) {
+            if (old == 0) {
+                instance.pendingOwnerDecrements.remove(owner);
+            } else {
+                instance.pendingOwnerDecrements.put(owner, old);
+            }
+            return false;
+        }
+        return true;
     }
 
     private void applyDeferredOwnerDecrement(Player player) {
-        int removed = pendingOwnerDecrements.getOrDefault(player.getUniqueId(), 0);
-        if (removed <= 0) {
+        if (!deferredOwnersHealthy) {
+            plugin.getLogger().severe("Cannot reconcile offline Chunk Loader quota for "
+                    + player.getUniqueId() + " while the owner journal is unreadable.");
             return;
         }
-        NamespacedKey key = new NamespacedKey(plugin, "chunkloaders");
-        int count = player.getPersistentDataContainer().getOrDefault(key, PersistentDataType.INTEGER, 0);
-        player.getPersistentDataContainer().set(key, PersistentDataType.INTEGER,
-                Math.max(0, count - removed));
-        pendingOwnerDecrements.remove(player.getUniqueId());
-        saveDeferredOwners();
+        int cumulative = pendingOwnerDecrements.getOrDefault(player.getUniqueId(), 0);
+        if (cumulative <= 0) {
+            return;
+        }
+        NamespacedKey quotaKey = new NamespacedKey(plugin, "chunkloaders");
+        NamespacedKey appliedKey = new NamespacedKey(plugin, "chunkloaders_offline_applied");
+        var pdc = player.getPersistentDataContainer();
+        int quota = pdc.getOrDefault(quotaKey, PersistentDataType.INTEGER, 0);
+        int applied = pdc.getOrDefault(appliedKey, PersistentDataType.INTEGER, 0);
+        final OfflineChunkLoaderQuota.Adjustment adjustment;
+        try {
+            adjustment = OfflineChunkLoaderQuota.reconcile(quota, cumulative, applied);
+        } catch (IllegalArgumentException invalid) {
+            plugin.getLogger().log(Level.SEVERE,
+                    "Conflicting cumulative Chunk Loader quota for " + player.getUniqueId()
+                            + "; preserving player PDC for manual review.", invalid);
+            return;
+        }
+        // Store both counters on the same player data object. Do not delete
+        // the cumulative journal: repeated login/restart sees zero delta.
+        pdc.set(quotaKey, PersistentDataType.INTEGER, adjustment.remaining());
+        pdc.set(appliedKey, PersistentDataType.INTEGER, adjustment.appliedTotal());
+    }
+
+    private static Map<UUID, Integer> parseDeferredOwnerJournal(Properties entries) {
+        Map<UUID, Integer> parsed = new HashMap<>();
+        for (String ownerText : entries.stringPropertyNames()) {
+            UUID owner = UUID.fromString(ownerText);
+            if (!owner.toString().equals(ownerText)) {
+                throw new IllegalArgumentException("Noncanonical journal owner UUID");
+            }
+            int total = Integer.parseInt(entries.getProperty(ownerText));
+            if (total <= 0 || parsed.putIfAbsent(owner, total) != null) {
+                throw new IllegalArgumentException("Invalid or duplicated offline owner total");
+            }
+        }
+        return parsed;
+    }
+
+    static int validatedOfflineOwnerJournalCount(Properties entries) {
+        return parseDeferredOwnerJournal(entries).size();
     }
 
     private void loadDeferredOwners() {
         if (!Files.isRegularFile(pendingFile)) {
+            if (Files.exists(pendingFile)) {
+                deferredOwnersHealthy = false;
+                plugin.getLogger().severe("Offline Chunk Loader journal is not a regular file: "
+                        + pendingFile + ". Not overwriting it.");
+            }
             return;
         }
         Properties entries = new Properties();
         try (InputStream in = Files.newInputStream(pendingFile)) {
             entries.load(in);
-            for (String key : entries.stringPropertyNames()) {
-                try {
-                    int count = Integer.parseInt(entries.getProperty(key));
-                    if (count > 0) {
-                        pendingOwnerDecrements.put(UUID.fromString(key), count);
-                    }
-                } catch (RuntimeException invalid) {
-                    plugin.getLogger().warning("Ignoring corrupt offline Chunk Loader count " + key);
-                }
-            }
-        } catch (IOException error) {
-            plugin.getLogger().log(Level.SEVERE, "Cannot load offline Chunk Loader adjustments", error);
+            pendingOwnerDecrements.putAll(parseDeferredOwnerJournal(entries));
+        } catch (IOException | IllegalArgumentException error) {
+            pendingOwnerDecrements.clear();
+            deferredOwnersHealthy = false;
+            plugin.getLogger().log(Level.SEVERE,
+                    "Cannot safely read offline owner quota journal from " + pendingFile
+                            + ". Preserving the original file; blocked offline owner adjustments "
+                            + "until an operator repairs it.", error);
         }
     }
 
-    private void saveDeferredOwners() {
+    private boolean saveDeferredOwners() {
+        if (!deferredOwnersHealthy) {
+            return false;
+        }
         Properties entries = new Properties();
         for (var entry : pendingOwnerDecrements.entrySet()) {
             entries.setProperty(entry.getKey().toString(), entry.getValue().toString());
         }
         try {
             Files.createDirectories(pendingFile.getParent());
-            Path pending = pendingFile.resolveSibling("chunk-loader-offline-decrements.properties.tmp");
-            try (OutputStream out = Files.newOutputStream(pending)) {
-                entries.store(out, "Offline FoxyMachines chunk-loader quota decrements");
-            }
+            Path pending = Files.createTempFile(
+                    pendingFile.getParent(), "chunk-loader-offline-", ".tmp");
             try {
-                Files.move(pending, pendingFile,
-                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException unsupported) {
-                Files.move(pending, pendingFile, StandardCopyOption.REPLACE_EXISTING);
+                try (OutputStream out = Files.newOutputStream(pending)) {
+                    entries.store(out, "Cumulative FoxyMachines offline loader decrements; never delete on login");
+                }
+                try {
+                    Files.move(pending, pendingFile,
+                            StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                } catch (AtomicMoveNotSupportedException unsupported) {
+                    Files.move(pending, pendingFile, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                Files.deleteIfExists(pending);
             }
+            return true;
         } catch (IOException error) {
-            plugin.getLogger().log(Level.SEVERE, "Could not save offline Chunk Loader adjustments", error);
+            deferredOwnersHealthy = false;
+            plugin.getLogger().log(Level.SEVERE,
+                    "Cannot persist offline Chunk Loader quota journal; refusing further "
+                            + "offline owner mutations until the disk failure is resolved.", error);
+            return false;
         }
     }
 
