@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -210,7 +211,12 @@ public final class ChunkLoaderPolicyService implements Listener {
             try (OutputStream out = Files.newOutputStream(pending)) {
                 entries.store(out, "Offline FoxyMachines chunk-loader quota decrements");
             }
-            Files.move(pending, pendingFile, StandardCopyOption.REPLACE_EXISTING);
+            try {
+                Files.move(pending, pendingFile,
+                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException unsupported) {
+                Files.move(pending, pendingFile, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException error) {
             plugin.getLogger().log(Level.SEVERE, "Could not save offline Chunk Loader adjustments", error);
         }
@@ -506,7 +512,12 @@ public final class ChunkLoaderPolicyService implements Listener {
             try (OutputStream out = Files.newOutputStream(pending)) {
                 entries.store(out, "FoxyMachines chunk loader positions (Slimefun IDs preserved)");
             }
-            Files.move(pending, registryFile, StandardCopyOption.REPLACE_EXISTING);
+            try {
+                Files.move(pending, registryFile,
+                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException unsupported) {
+                Files.move(pending, registryFile, StandardCopyOption.REPLACE_EXISTING);
+            }
             return true;
         } catch (IOException error) {
             plugin.getLogger().log(Level.SEVERE,
