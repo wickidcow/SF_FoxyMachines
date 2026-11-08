@@ -72,6 +72,9 @@ public final class ChunkLoaderPolicyService implements Listener {
         Bukkit.getPluginManager().registerEvents(instance, plugin);
         instance.refresh();
         Bukkit.getScheduler().runTaskTimer(plugin, instance::refresh, 40L, 40L);
+        // ChunkLoadEvent is not fired for chunks already loaded when the
+        // plugin starts. Validate those separately after Slimefun initializes.
+        Bukkit.getScheduler().runTaskLater(plugin, instance::validateAlreadyLoadedRecords, 100L);
         Bukkit.getScheduler().runTaskLater(plugin, instance::discoverOldForceLoaded, 100L);
     }
 
@@ -370,6 +373,25 @@ public final class ChunkLoaderPolicyService implements Listener {
                         && key.z() >> 4 == chunk.getZ());
         if (tracked) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> validateLoadedChunk(chunk), 20L);
+        }
+    }
+
+    private void validateAlreadyLoadedRecords() {
+        if (!registryHealthy) {
+            return;
+        }
+        Set<ChunkKey> checked = new HashSet<>();
+        for (BlockKey location : new HashSet<>(placed.keySet())) {
+            ChunkKey key = new ChunkKey(
+                    location.worldId(), location.x() >> 4, location.z() >> 4);
+            if (!checked.add(key)) {
+                continue;
+            }
+            World world = Bukkit.getWorld(key.worldId());
+            // Do not force-load a dormant chunk just to check it.
+            if (world != null && world.isChunkLoaded(key.x(), key.z())) {
+                validateLoadedChunk(world.getChunkAt(key.x(), key.z()));
+            }
         }
     }
 
