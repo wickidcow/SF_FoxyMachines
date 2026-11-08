@@ -90,7 +90,7 @@ public final class ChunkLoaderPolicyService implements Listener {
     }
 
     public static boolean canPlace() {
-        if (instance == null || !instance.registryHealthy) {
+        if (!isRegistryHealthy()) {
             return false;
         }
         instance.refresh();
@@ -115,7 +115,7 @@ public final class ChunkLoaderPolicyService implements Listener {
     }
 
     public static boolean register(Block block, UUID owner) {
-        if (instance == null || !instance.registryHealthy) {
+        if (!isRegistryHealthy()) {
             return false;
         }
         BlockKey key = BlockKey.of(block);
@@ -141,7 +141,7 @@ public final class ChunkLoaderPolicyService implements Listener {
     }
 
     public static boolean unregister(Block block) {
-        if (instance == null || !instance.registryHealthy) {
+        if (!isRegistryHealthy()) {
             return false;
         }
         BlockKey key = BlockKey.of(block);
@@ -367,9 +367,9 @@ public final class ChunkLoaderPolicyService implements Listener {
      * opt-in is required to clear their old vanilla force-loaded flags.
      */
     private void discoverOldForceLoaded() {
-        if (!registryHealthy) {
-            plugin.getLogger().severe("Skipped historical Chunk Loader migration because its "
-                    + "saved owner registry could not be safely read.");
+        if (!registryHealthy || !deferredOwnersHealthy) {
+            plugin.getLogger().severe("Skipped historical Chunk Loader migration because saved "
+                    + "owner or offline quota journal could not be safely read.");
             return;
         }
         boolean migrate = plugin.getConfig().getBoolean("migrate-legacy-force-loaded-chunks", false);
