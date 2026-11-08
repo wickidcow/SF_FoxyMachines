@@ -34,6 +34,12 @@ Without that optional, verified migration, old persistent vanilla force-load fla
 
 Slimefun Legacy can be set to `ALWAYS` for Resonance Beacons while FoxyMachines is set to `OFF`, or vice versa; neither setting overrides the other.
 
+## Corrupt or unreadable ownership registry
+
+If `chunk-loader-positions.properties` cannot be parsed in full, FoxyMachines now **fails closed**: it refuses new loader placements, owner-mutating breaks and historical flag migration. It does not replace or truncate the file, accept only some of its entries, or force-load historical locations from a partial registry. Restore the original file from a trusted backup and resolve the logged malformed position or owner UUID. Also inspect any `chunk-loader-positions.properties.tmp` left by an interrupted save before restarting. Do not delete the registry to silence the error.
+
+When the registry is healthy, the addon rechecks existing recorded loaders in chunks already loaded during startup, without force-loading dormant chunks merely to inspect them. It conservatively leaves unverified Slimefun cache entries intact until their real block data becomes available.
+
 ## Validation gates
 
 New placement, two-loader overlap, owner quota, online/offline ticket release/recovery, OFF hiding, block removal by unrelated tools, no forced flags on new placements, Paper 1.21.11/26.2/26.3 native restart, and the historical one-time migration are required before treating this as release-ready. All published FoxyMachines and Slimefun Legacy tags remain immutable.
