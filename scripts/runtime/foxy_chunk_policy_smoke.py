@@ -71,15 +71,14 @@ def build_probe(root: Path, foxy: Path, legacy: Path, paper_api: Path,
 
 def set_mode(config: Path, mode: str):
     text = config.read_text(encoding="utf-8")
-    # Bukkit YAML may quote OFF when saving config (YAML 1.1 boolean token).
-    # Accept only a single exact scalar, optionally enclosed in matching quotes.
-    match = list(re.finditer(
-        r"""(?m)^chunk-loading-mode:[ \t]*(?:ONLINE|ALWAYS|OFF|"(?:ONLINE|ALWAYS|OFF)"|'(?:ONLINE|ALWAYS|OFF)')[ \t]*$""",
-        text,
-    ))
-    if len(match) != 1:
+    # Match the exact top-level key, not a fixed set of previous values.
+    # Bukkit may rewrite YAML scalars (including booleans) on shutdown.
+    # This harness intentionally replaces the field with a valid explicit
+    # policy on the next restart; production parsing is tested separately.
+    matches = list(re.finditer(r"(?m)^chunk-loading-mode:[^\\r\\n]*$", text))
+    if len(matches) != 1:
         raise RuntimeError("FoxyMachines config must contain exactly one independent policy field")
-    text = text[:match[0].start()] + f"chunk-loading-mode: {mode}" + text[match[0].end():]
+    text = text[:matches[0].start()] + f"chunk-loading-mode: {mode}" + text[matches[0].end():]
     config.write_text(text, encoding="utf-8")
 
 
