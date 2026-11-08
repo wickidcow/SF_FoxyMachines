@@ -69,7 +69,7 @@ jobs:
             -Dpackaging=jar \
             -DgeneratePom=true
 
-      - name: Verify shared chunk-loader policy unit tests (Paper 1.21.11 floor)
+      - name: Verify independent FoxyMachines loader policy unit tests (Paper 1.21.11 floor)
         run: >-
           mvn -B
           -Dpaper.version=1.21.11-R0.1-SNAPSHOT
