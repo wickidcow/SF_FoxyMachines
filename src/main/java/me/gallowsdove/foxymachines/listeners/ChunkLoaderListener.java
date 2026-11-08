@@ -41,6 +41,14 @@ public class ChunkLoaderListener implements Listener {
         }
 
         Block b = e.getBlockPlaced();
+        if (!ChunkLoaderPolicyService.isRegistryHealthy()) {
+            e.setCancelled(true);
+            p.sendMessage(Component.text(
+                    "FoxyMachines Chunk Loader ownership registry could not be read. "
+                            + "Placement is blocked to protect saved loaders; check server logs.",
+                    NamedTextColor.RED));
+            return;
+        }
         if (!ChunkLoaderPolicyService.canPlace()) {
             e.setCancelled(true);
             p.sendMessage(Component.text(
