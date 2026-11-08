@@ -280,17 +280,23 @@ public final class ChunkLoaderPolicyService implements Listener {
                         continue;
                     }
                     BlockKey key = BlockKey.of(block);
-                    if (placed.containsKey(key)) {
+                    boolean previouslyRecorded = placed.containsKey(key);
+                    // Resume interrupted migrations: the block registry may
+                    // have been persisted before the legacy flag was cleared.
+                    if (previouslyRecorded && !migrate) {
                         continue;
                     }
                     found++;
                     if (!migrate) {
                         continue;
                     }
-                    // A force-loaded chunk can be shared; require a deliberate
-                    // opt-in and do not change any other plugin's tickets.
-                    placed.put(key, owner);
-                    saveRegistry();
+                    // A force-loaded chunk can be shared; require an explicit
+                    // operator opt-in before altering its historical vanilla
+                    // force-loaded flag, even for a previously recorded block.
+                    if (!previouslyRecorded) {
+                        placed.put(key, owner);
+                        saveRegistry();
+                    }
                     chunk.setForceLoaded(false);
                     imported++;
                 }
