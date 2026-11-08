@@ -155,6 +155,14 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile scripts/runtime/foxy_chunk_policy_smoke.py
+          mkdir -p build
+          mvn -B -Dpaper.version=1.21.11-R0.1-SNAPSHOT \
+            -Dslimefun.groupId=com.github.wickidcow \
+            -Dslimefun.artifactId=Slimefun-Legacy \
+            -Dslimefun.version=${SLIMEFUN_LEGACY_VERSION} \
+            dependency:build-classpath \
+            -Dmdep.outputFile=build/native-probe-classpath.txt
+          test -s build/native-probe-classpath.txt
           find "$HOME/.m2/repository/io/papermc/paper/paper-api/1.21.11-R0.1-SNAPSHOT" \
             -maxdepth 1 -name 'paper-api-*.jar' ! -name '*sources*' ! -name '*javadoc*' \
             -print -quit | grep -q .
@@ -170,6 +178,7 @@ jobs:
             --foxy-jar "dist/${OUTPUT_NAME}" \
             --slimefun-jar legacy-deps/Slimefun-Legacy4.1.79.jar \
             --paper-api-jar "$PAPER_API_JAR" \
+            --compile-classpath-file build/native-probe-classpath.txt \
             --minecraft 1.21.11
 
       - name: Native Paper 26.3 zero-player ticket and restart policy
@@ -183,6 +192,7 @@ jobs:
             --foxy-jar "dist/${OUTPUT_NAME}" \
             --slimefun-jar legacy-deps/Slimefun-Legacy4.1.79.jar \
             --paper-api-jar "$PAPER_API_JAR" \
+            --compile-classpath-file build/native-probe-classpath.txt \
             --minecraft 26.3
 
       - name: Publish distinct immutable release (manual exact-tag only)
