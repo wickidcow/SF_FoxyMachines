@@ -22,6 +22,9 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -47,6 +50,8 @@ public final class ChunkLoaderPolicyService implements Listener {
 
     private final FoxyMachines plugin;
     private final Path registryFile;
+    private final Path pendingFile;
+    private final Map<UUID, Integer> pendingOwnerDecrements = new HashMap<>();
     private final Map<BlockKey, UUID> placed = new HashMap<>();
     private final Set<ChunkKey> ticketed = new HashSet<>();
     private ChunkLoaderPolicy activePolicy = ChunkLoaderPolicy.ONLINE;
@@ -54,6 +59,7 @@ public final class ChunkLoaderPolicyService implements Listener {
     private ChunkLoaderPolicyService(FoxyMachines plugin) {
         this.plugin = plugin;
         registryFile = plugin.getDataFolder().toPath().resolve("chunk-loader-positions.properties");
+        pendingFile = plugin.getDataFolder().toPath().resolve("chunk-loader-offline-decrements.properties");
     }
 
     public static void start(FoxyMachines plugin) {
@@ -62,6 +68,7 @@ public final class ChunkLoaderPolicyService implements Listener {
         }
         instance = new ChunkLoaderPolicyService(plugin);
         instance.loadRegistry();
+        instance.loadDeferredOwners();
         Bukkit.getPluginManager().registerEvents(instance, plugin);
         instance.refresh();
         Bukkit.getScheduler().runTaskTimer(plugin, instance::refresh, 40L, 40L);
@@ -102,6 +109,70 @@ public final class ChunkLoaderPolicyService implements Listener {
             instance.refresh();
         }
         return found;
+    }
+
+    /**
+     * Player PDC is mutable only while the owner is online. Preserve any
+     * offline break's quota decrement until the player's next login.
+     */
+    public static void deferOfflineOwnerDecrement(UUID owner) {
+        if (instance == null) {
+            return;
+        }
+        instance.pendingOwnerDecrements.merge(owner, 1, Integer::sum);
+        instance.saveDeferredOwners();
+    }
+
+    private void applyDeferredOwnerDecrement(Player player) {
+        int removed = pendingOwnerDecrements.getOrDefault(player.getUniqueId(), 0);
+        if (removed <= 0) {
+            return;
+        }
+        NamespacedKey key = new NamespacedKey(plugin, "chunkloaders");
+        int count = player.getPersistentDataContainer().getOrDefault(key, PersistentDataType.INTEGER, 0);
+        player.getPersistentDataContainer().set(key, PersistentDataType.INTEGER,
+                Math.max(0, count - removed));
+        pendingOwnerDecrements.remove(player.getUniqueId());
+        saveDeferredOwners();
+    }
+
+    private void loadDeferredOwners() {
+        if (!Files.isRegularFile(pendingFile)) {
+            return;
+        }
+        Properties entries = new Properties();
+        try (InputStream in = Files.newInputStream(pendingFile)) {
+            entries.load(in);
+            for (String key : entries.stringPropertyNames()) {
+                try {
+                    int count = Integer.parseInt(entries.getProperty(key));
+                    if (count > 0) {
+                        pendingOwnerDecrements.put(UUID.fromString(key), count);
+                    }
+                } catch (RuntimeException invalid) {
+                    plugin.getLogger().warning("Ignoring corrupt offline Chunk Loader count " + key);
+                }
+            }
+        } catch (IOException error) {
+            plugin.getLogger().log(Level.SEVERE, "Cannot load offline Chunk Loader adjustments", error);
+        }
+    }
+
+    private void saveDeferredOwners() {
+        Properties entries = new Properties();
+        for (var entry : pendingOwnerDecrements.entrySet()) {
+            entries.setProperty(entry.getKey().toString(), entry.getValue().toString());
+        }
+        try {
+            Files.createDirectories(pendingFile.getParent());
+            Path pending = pendingFile.resolveSibling("chunk-loader-offline-decrements.properties.tmp");
+            try (OutputStream out = Files.newOutputStream(pending)) {
+                entries.store(out, "Offline FoxyMachines chunk-loader quota decrements");
+            }
+            Files.move(pending, pendingFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException error) {
+            plugin.getLogger().log(Level.SEVERE, "Could not save offline Chunk Loader adjustments", error);
+        }
     }
 
     private ChunkLoaderPolicy readPolicy() {
@@ -233,7 +304,10 @@ public final class ChunkLoaderPolicyService implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        Bukkit.getScheduler().runTaskLater(plugin, this::refresh, 1L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            applyDeferredOwnerDecrement(event.getPlayer());
+            refresh();
+        }, 1L);
     }
 
     @EventHandler
