@@ -17,6 +17,8 @@ public final class FoxyTicketProbe extends JavaPlugin {
     private static final int BLOCK_X = 2048;
     private static final int BLOCK_Y = 96;
     private static final int BLOCK_Z = 2048;
+    private static final int UNRELATED_FORCE_CHUNK_X = 144;
+    private static final int UNRELATED_FORCE_CHUNK_Z = 144;
     private static final UUID OWNER = UUID.fromString("b4b2ea55-8a62-42b3-9b25-b57c255debf7");
 
     @Override
@@ -45,6 +47,9 @@ public final class FoxyTicketProbe extends JavaPlugin {
                 if (!ChunkLoaderPolicyService.register(block, OWNER)) {
                     throw new IllegalStateException("Failed to persist real new-loader ownership");
                 }
+                // A separate operator/system vanilla flag must be untouched
+                // across the policy changes and the four server restarts.
+                world.setChunkForceLoaded(UNRELATED_FORCE_CHUNK_X, UNRELATED_FORCE_CHUNK_Z, true);
             }
             if (block.getType() != Material.BEACON) {
                 throw new IllegalStateException("The previously placed beacon was not preserved");
@@ -58,6 +63,9 @@ public final class FoxyTicketProbe extends JavaPlugin {
             }
             if (world.isChunkForceLoaded(cx, cz)) {
                 throw new IllegalStateException("New Foxy-owned loader must not set vanilla force-load");
+            }
+            if (!world.isChunkForceLoaded(UNRELATED_FORCE_CHUNK_X, UNRELATED_FORCE_CHUNK_Z)) {
+                throw new IllegalStateException("Unrelated operator force-loaded chunk was modified");
             }
             Path registry = foxy.getDataFolder().toPath().resolve("chunk-loader-positions.properties");
             if (!Files.isRegularFile(registry)) {
