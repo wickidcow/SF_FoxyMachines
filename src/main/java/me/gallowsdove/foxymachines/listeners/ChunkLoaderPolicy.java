@@ -2,7 +2,7 @@ package me.gallowsdove.foxymachines.listeners;
 
 import java.util.Locale;
 
-/** Policy shared with Slimefun Legacy's Resonance Beacon settings. */
+/** Standalone FoxyMachines chunk-loader policy, independent of other plugins. */
 public enum ChunkLoaderPolicy {
     ONLINE, ALWAYS, OFF;
 
