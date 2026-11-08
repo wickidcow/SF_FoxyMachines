@@ -108,6 +108,14 @@ public final class ChunkLoaderPolicyService implements Listener {
         instance.refresh();
     }
 
+    /**
+     * Prefer the verified Foxy-owned position record when old Slimefun
+     * block-data owner fields are temporarily unavailable. No chunk load.
+     */
+    public static UUID getRegisteredOwner(Block block) {
+        return instance == null ? null : instance.placed.get(BlockKey.of(block));
+    }
+
     public static boolean unregister(Block block) {
         if (instance == null) {
             return false;
