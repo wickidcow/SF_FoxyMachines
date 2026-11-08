@@ -45,6 +45,13 @@ public class ChunkLoader extends SlimefunItem {
             @Override
             public void onPlayerBreak(@Nonnull BlockBreakEvent e, @Nonnull ItemStack item, @Nonnull List<ItemStack> drops) {
                 Block b = e.getBlock();
+                if (!ChunkLoaderPolicyService.isRegistryHealthy()) {
+                    e.setCancelled(true);
+                    FoxyMachines.getInstance().getLogger().severe(
+                            "Chunk Loader break cancelled at " + b.getLocation()
+                                    + ": historical ownership registry is unreadable.");
+                    return;
+                }
                 String owner = SlimefunBlockDataUtil.getValue(b, "owner");
                 UUID registeredOwner = ChunkLoaderPolicyService.getRegisteredOwner(b);
                 boolean managed = ChunkLoaderPolicyService.unregister(b);
