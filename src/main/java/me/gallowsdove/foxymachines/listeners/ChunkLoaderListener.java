@@ -42,7 +42,7 @@ public class ChunkLoaderListener implements Listener {
                     NamedTextColor.LIGHT_PURPLE));
             return;
         }
-        if (b.getChunk().isForceLoaded()) {
+        if (b.getChunk().isForceLoaded() || ChunkLoaderPolicyService.isLoaderChunkTracked(b)) {
             e.setCancelled(true);
             p.sendMessage(Component.text("This chunk is already loaded!", NamedTextColor.LIGHT_PURPLE));
             return;
