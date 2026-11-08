@@ -87,6 +87,18 @@ public final class ChunkLoaderPolicyService implements Listener {
         return instance.activePolicy != ChunkLoaderPolicy.OFF;
     }
 
+    public static boolean isLoaderChunkTracked(Block block) {
+        if (instance == null) {
+            return false;
+        }
+        UUID worldId = block.getWorld().getUID();
+        int chunkX = block.getX() >> 4;
+        int chunkZ = block.getZ() >> 4;
+        return instance.placed.keySet().stream().anyMatch(key ->
+                key.worldId().equals(worldId) && (key.x() >> 4) == chunkX
+                        && (key.z() >> 4) == chunkZ);
+    }
+
     public static void register(Block block, UUID owner) {
         if (instance == null) {
             return;
