@@ -346,7 +346,21 @@ public final class ChunkLoaderPolicyService implements Listener {
                         }
                     }
                     // Never release historical vanilla force-loading before
-                    // the verified loader ownership is durable on disk.
+                    // the verified loader ownership is durable on disk. When
+                    // the current policy calls for continuous loading, acquire
+                    // our plugin ticket FIRST so machines do not temporarily
+                    // drop out of memory during the one-time migration.
+                    if (activePolicy.shouldTicket(!Bukkit.getOnlinePlayers().isEmpty())) {
+                        refresh();
+                        ChunkKey chunkKey = new ChunkKey(
+                                world.getUID(), chunk.getX(), chunk.getZ());
+                        if (!ticketed.contains(chunkKey)) {
+                            plugin.getLogger().severe("Preserving old force-loaded flag at "
+                                    + block.getLocation()
+                                    + " because a replacement FoxyMachines ticket was not acquired.");
+                            continue;
+                        }
+                    }
                     chunk.setForceLoaded(false);
                     imported++;
                 }
