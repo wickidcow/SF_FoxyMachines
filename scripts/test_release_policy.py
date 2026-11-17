@@ -12,8 +12,8 @@ SHA = "a" * 40
 
 
 class ImmutablePublisherTest(unittest.TestCase):
-    def invoke(self, *, event="workflow_dispatch", ref="refs/tags/v1.0.2",
-               ref_name="v1.0.2", version="1.0.2", output="SF_FoxyMachines1.0.2.jar",
+    def invoke(self, *, event="workflow_dispatch", ref="refs/tags/v1.0.3",
+               ref_name="v1.0.3", version="1.0.3", output="SF_FoxyMachines1.0.3.jar",
                exists=False, make_jar=True):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -55,8 +55,8 @@ class ImmutablePublisherTest(unittest.TestCase):
         result, calls = self.invoke()
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(2, len(calls))
-        self.assertIn("release view v1.0.2", calls[0])
-        self.assertIn("release create v1.0.2 dist/SF_FoxyMachines1.0.2.jar", calls[1])
+        self.assertIn("release view v1.0.3", calls[0])
+        self.assertIn("release create v1.0.3 dist/SF_FoxyMachines1.0.3.jar", calls[1])
         self.assertIn("--verify-tag", calls[1])
 
     def test_existing_release_is_immutable(self):
@@ -81,7 +81,7 @@ class ImmutablePublisherTest(unittest.TestCase):
         self.assertFalse(calls)
 
     def test_manual_wrong_tag_cannot_publish(self):
-        result, calls = self.invoke(ref="refs/tags/v1.0.3", ref_name="v1.0.3")
+        result, calls = self.invoke(ref="refs/tags/v1.0.4", ref_name="v1.0.4")
         self.assertNotEqual(0, result.returncode)
         self.assertFalse(calls)
 
@@ -91,9 +91,33 @@ class ImmutablePublisherTest(unittest.TestCase):
         self.assertFalse(calls)
 
     def test_wrong_jar_identity_cannot_publish(self):
-        result, calls = self.invoke(output="SF_FoxyMachines1.0.3.jar")
+        result, calls = self.invoke(output="SF_FoxyMachines1.0.4.jar")
         self.assertNotEqual(0, result.returncode)
         self.assertFalse(calls)
+
+    def test_auto_master_publish_requires_same_commit_and_distinct_tag(self):
+        workflow = WORKFLOW.read_text()
+        step = workflow.split(
+            "name: Auto-publish new immutable version after verified master CI", 1
+        )[1]
+        required = (
+            "github.event_name == 'push' && github.ref == 'refs/heads/master'",
+            'MASTER_SHA="$(gh api',
+            'test "$GITHUB_SHA" = "$MASTER_SHA"',
+            'test "$(git rev-parse HEAD)" = "$MASTER_SHA"',
+            'gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG"',
+            'gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG"',
+            "HTTP 404",
+            'gh release create "$TAG" "$JAR"',
+            'gh release download "$TAG"',
+            "sha256sum -c -",
+        )
+        for check in required:
+            with self.subTest(check=check):
+                self.assertIn(check, step)
+        self.assertLess(step.index("MASTER_SHA="), step.index("gh release create"))
+        self.assertLess(step.index("git/ref/tags/$TAG"), step.index("gh release create"))
+        self.assertNotIn("--clobber", step)
 
     def test_publisher_and_workflow_have_no_mutable_release_actions(self):
         source = PUBLISH.read_text()
