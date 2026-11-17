@@ -59,6 +59,9 @@ public class FoxyMachines extends AbstractAddon {
         UnbreakableRune.init();
         ItemSetup.INSTANCE.init();
         ResearchSetup.INSTANCE.init();
+        // Uses the shared Slimefun Legacy policy without unregistering
+        // historical FoxyMachines item IDs or touching unrelated force loads.
+        ChunkLoaderPolicyService.start(this);
 
         this.folderPath = getDataFolder().getAbsolutePath() + File.separator + "data-storage" + File.separator;
         BerryBushTrimmer.loadTrimmedBlocks();
@@ -84,6 +87,7 @@ public class FoxyMachines extends AbstractAddon {
     @SneakyThrows
     @Override
     public void disable() {
+        ChunkLoaderPolicyService.stop();
         BerryBushTrimmer.saveTrimmedBlocks();
         ForcefieldDome.saveDomeLocations();
         if (getConfig().getBoolean("custom-mobs")) {

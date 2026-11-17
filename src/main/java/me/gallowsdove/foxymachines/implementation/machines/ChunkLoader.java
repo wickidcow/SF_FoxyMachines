@@ -9,6 +9,7 @@ import io.github.thebusybiscuit.slimefun4.core.handlers.BlockUseHandler;
 import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import me.gallowsdove.foxymachines.FoxyMachines;
 import me.gallowsdove.foxymachines.Items;
+import me.gallowsdove.foxymachines.listeners.ChunkLoaderPolicyService;
 import me.gallowsdove.foxymachines.utils.SlimefunBlockDataUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -44,15 +45,75 @@ public class ChunkLoader extends SlimefunItem {
             @Override
             public void onPlayerBreak(@Nonnull BlockBreakEvent e, @Nonnull ItemStack item, @Nonnull List<ItemStack> drops) {
                 Block b = e.getBlock();
+                if (!ChunkLoaderPolicyService.isRegistryHealthy()) {
+                    e.setCancelled(true);
+                    FoxyMachines.getInstance().getLogger().severe(
+                            "Chunk Loader break cancelled at " + b.getLocation()
+                                    + ": historical ownership registry is unreadable.");
+                    return;
+                }
                 String owner = SlimefunBlockDataUtil.getValue(b, "owner");
-                if (owner != null) {
-                    NamespacedKey key = new NamespacedKey(FoxyMachines.getInstance(), "chunkloaders");
-                    Player p = Bukkit.getPlayer(UUID.fromString(owner));
-
-                    int i = p.getPersistentDataContainer().get(key, PersistentDataType.INTEGER) - 1;
-                    p.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, i);
-
-                    b.getChunk().setForceLoaded(false);
+                UUID registeredOwner = ChunkLoaderPolicyService.getRegisteredOwner(b);
+                boolean managed = ChunkLoaderPolicyService.unregister(b);
+                if (registeredOwner != null && !managed) {
+                    // Preserve the physical loader and existing quota if
+                    // its owner registry could not be safely persisted.
+                    e.setCancelled(true);
+                    FoxyMachines.getInstance().getLogger().severe(
+                            "Cancelled Chunk Loader break at " + b.getLocation()
+                                    + ": the owner registry update failed.");
+                    return;
+                }
+                if (owner != null || registeredOwner != null) {
+                    try {
+                        UUID ownerId = owner == null ? registeredOwner : UUID.fromString(owner);
+                        if (registeredOwner != null && !registeredOwner.equals(ownerId)) {
+                            // A stale or conflicting record must never decrement
+                            // another player's persistent placement quota.
+                            FoxyMachines.getInstance().getLogger().warning(
+                                    "Conflicting stored owner at " + b.getLocation()
+                                            + "; left player quota unchanged for operator review.");
+                        } else {
+                            NamespacedKey key = new NamespacedKey(FoxyMachines.getInstance(), "chunkloaders");
+                            Player player = Bukkit.getPlayer(ownerId);
+                            if (player != null) {
+                                int count = player.getPersistentDataContainer()
+                                        .getOrDefault(key, PersistentDataType.INTEGER, 0);
+                                player.getPersistentDataContainer().set(
+                                        key, PersistentDataType.INTEGER, Math.max(0, count - 1));
+                            } else if (!ChunkLoaderPolicyService.deferOfflineOwnerDecrement(ownerId)) {
+                                // A failed durable journal write cannot be
+                                // treated as a successful quota refund.
+                                // Preserve the placed loader and its owner
+                                // record instead of silently losing the
+                                // offline player's adjustment.
+                                if (managed && !ChunkLoaderPolicyService.register(b, ownerId)) {
+                                    FoxyMachines.getInstance().getLogger().severe(
+                                            "Unable to restore owner registry after offline quota journal failure at "
+                                                    + b.getLocation() + ". Operator recovery required.");
+                                }
+                                e.setCancelled(true);
+                                FoxyMachines.getInstance().getLogger().severe(
+                                        "Chunk Loader break blocked at " + b.getLocation()
+                                                + " because its offline owner's quota journal could not be saved.");
+                                return;
+                            }
+                        }
+                    } catch (IllegalArgumentException invalidOwner) {
+                        FoxyMachines.getInstance().getLogger().warning(
+                                "Could not parse historical Chunk Loader owner; leaving owner count unchanged.");
+                    }
+                    if (!managed && b.getChunk().isForceLoaded()) {
+                        // A legacy vanilla force-load flag has no recorded owner.
+                        // Even a removed FoxyMachines block does not prove the
+                        // flag is unused by an administrator or another plugin.
+                        // Do NOT clear it implicitly. The operator can review
+                        // remaining flags and use the explicit audited migration.
+                        FoxyMachines.getInstance().getLogger().warning(
+                                "Old FoxyMachines loader broken at " + b.getLocation()
+                                        + "; retained ambiguous vanilla force-loaded chunk flag. "
+                                        + "Audit it before using /forceload remove.");
+                    }
                     SlimefunBlockDataUtil.remove(b);
                 }
 

@@ -38,6 +38,20 @@
 # for ex, by default the strainers from InfinityExpansion are disabled as they do not respect the unbreakable setting
 
 auto-update: true
+# Independent FoxyMachines Chunk Loader mode; does NOT follow Slimefun Legacy's
+# Resonance Beacon. Choices: ONLINE (default), ALWAYS, OFF.
+# ONLINE keeps Foxy-owned chunks loaded while any player is online.
+# ALWAYS keeps Foxy-owned chunks loaded while the server is running.
+# OFF releases Foxy-owned tickets and hides the item from the guide.
+chunk-loading-mode: ONLINE
+# WARNING: historical FoxyMachines Chunk Loaders used persistent vanilla force
+# loaded flags, which cannot identify which plugin or operator owns the flag.
+# For safety the migration starts OFF. Review the log's candidate count and
+# back up worlds before intentionally enabling this one-time conversion.
+# The converter checks real CHUNK_LOADER block IDs and stored UUID owners.
+# It never globally clears unknown force-loaded chunks.
+migrate-legacy-force-loaded-chunks: false
+
 max-chunk-loaders: 8
 gps-complexity-per-loader: 7500
 ghost-blocks: true

@@ -13,14 +13,20 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 
 public class ChunkLoaderListener implements Listener {
+    private final Set<BlockPlaceEvent> provisional =
+            Collections.newSetFromMap(new IdentityHashMap<>());
     @EventHandler(ignoreCancelled = true)
     public void onChunkLoaderPlace(@Nonnull BlockPlaceEvent e) {
         if(e.getBlock().getType() != Material.BEACON) {
@@ -35,7 +41,22 @@ public class ChunkLoaderListener implements Listener {
         }
 
         Block b = e.getBlockPlaced();
-        if (b.getChunk().isForceLoaded()) {
+        if (!ChunkLoaderPolicyService.isRegistryHealthy()) {
+            e.setCancelled(true);
+            p.sendMessage(Component.text(
+                    "FoxyMachines Chunk Loader ownership registry could not be read. "
+                            + "Placement is blocked to protect saved loaders; check server logs.",
+                    NamedTextColor.RED));
+            return;
+        }
+        if (!ChunkLoaderPolicyService.canPlace()) {
+            e.setCancelled(true);
+            p.sendMessage(Component.text(
+                    "FoxyMachines Chunk Loader is disabled in FoxyMachines config.yml.",
+                    NamedTextColor.LIGHT_PURPLE));
+            return;
+        }
+        if (b.getChunk().isForceLoaded() || ChunkLoaderPolicyService.isLoaderChunkTracked(b)) {
             e.setCancelled(true);
             p.sendMessage(Component.text("This chunk is already loaded!", NamedTextColor.LIGHT_PURPLE));
             return;
@@ -61,8 +82,41 @@ public class ChunkLoaderListener implements Listener {
             return;
         }
 
+        // The new loader must be durably registered before charging the
+        // owner's quota. If its registry cannot be saved (e.g. a full disk),
+        // cancel placement rather than creating an untracked block.
+        if (!ChunkLoaderPolicyService.register(b, p.getUniqueId())) {
+            e.setCancelled(true);
+            p.sendMessage(Component.text(
+                    "Could not save Chunk Loader ownership; placement cancelled. Check server logs.",
+                    NamedTextColor.RED));
+            return;
+        }
         p.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, i);
-        b.getChunk().setForceLoaded(true);
         SlimefunBlockDataUtil.setValue(b, "owner", p.getUniqueId().toString());
+        provisional.add(e);
+    }
+
+    /**
+     * Other protections may cancel placement at HIGHEST after our NORMAL
+     * handler. Roll back the provisional owner/quota so cancelled placements
+     * cannot create phantom chunk tickets or consume a user's limit.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
+    public void onChunkLoaderPlacementFinalized(BlockPlaceEvent event) {
+        if (!provisional.remove(event) || !event.isCancelled()) {
+            return;
+        }
+        Block block = event.getBlockPlaced();
+        if (!ChunkLoaderPolicyService.unregister(block)) {
+            FoxyMachines.getInstance().getLogger().severe(
+                    "A cancelled Chunk Loader placement at " + block.getLocation()
+                            + " could not persist rollback; manual review is required.");
+            return;
+        }
+        Player player = event.getPlayer();
+        NamespacedKey key = new NamespacedKey(FoxyMachines.getInstance(), "chunkloaders");
+        int used = player.getPersistentDataContainer().getOrDefault(key, PersistentDataType.INTEGER, 0);
+        player.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, Math.max(0, used - 1));
     }
 }
