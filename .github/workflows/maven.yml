@@ -12,8 +12,8 @@ permissions:
   contents: write
 
 env:
-  VERSION: "1.0.2"
-  OUTPUT_NAME: "SF_FoxyMachines1.0.2.jar"
+  VERSION: "1.0.3"
+  OUTPUT_NAME: "SF_FoxyMachines1.0.3.jar"
   SLIMEFUN_LEGACY_VERSION: "4.1.46"
 
 concurrency:
@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fq '<version>1.0.2</version>' pom.xml
+          grep -Fq '<version>1.0.3</version>' pom.xml
           grep -Fq '<maven.compiler.release>21</maven.compiler.release>' pom.xml
           grep -Fq '<finalName>SF_FoxyMachines${project.version}</finalName>' pom.xml
 
@@ -124,7 +124,7 @@ jobs:
           cp "$JAR" "dist/${OUTPUT_NAME}"
           JAR="dist/${OUTPUT_NAME}"
           jar tf "$JAR" | grep -Fq 'plugin.yml'
-          unzip -p "$JAR" plugin.yml | grep -Fq 'version: 1.0.2'
+          unzip -p "$JAR" plugin.yml | grep -Fq 'version: 1.0.3'
           javap -verbose -classpath "$JAR" me.gallowsdove.foxymachines.FoxyMachines | grep -Fq 'major version: 65'
           if jar tf "$JAR" | grep -q '^io/github/thebusybiscuit/slimefun4/'; then
             echo 'Slimefun core classes must not be shaded into FoxyMachines.' >&2
@@ -215,3 +215,45 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: bash scripts/publish_immutable_release.sh
+
+      # The exact current master push completed all compile, unit and native
+      # Paper 1.21.11/26.2/26.3 steps above. Publish only a distinct version;
+      # never overwrite a published tag, artifact or previous release.
+      - name: Auto-publish new immutable version after verified master CI
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]
+          test "$OUTPUT_NAME" = "SF_FoxyMachines$VERSION.jar"
+          JAR="dist/$OUTPUT_NAME"
+          test -s "$JAR"
+          test -s "docs/releases/$VERSION.md"
+          MASTER_SHA="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/master" --jq '.object.sha')"
+          test "$GITHUB_SHA" = "$MASTER_SHA" && test "$(git rev-parse HEAD)" = "$MASTER_SHA" || {
+            echo "Master advanced; a newer exact-source CI will publish the next version." >&2
+            exit 1
+          }
+          unzip -p "$JAR" plugin.yml | grep -Fq "version: $VERSION"
+          SHA256="$(sha256sum "$JAR" | cut -d' ' -f1)"
+          TAG="v$VERSION"
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > /dev/null 2>"$RUNNER_TEMP/release-probe.err"; then
+            echo "Immutable $TAG already published; skipping repeat release."
+            exit 0
+          elif ! grep -Fq 'HTTP 404' "$RUNNER_TEMP/release-probe.err"; then
+            cat "$RUNNER_TEMP/release-probe.err" >&2
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" > /dev/null 2>"$RUNNER_TEMP/tag-probe.err"; then
+            echo "Refusing pre-existing orphan tag $TAG." >&2
+            exit 1
+          elif ! grep -Fq 'HTTP 404' "$RUNNER_TEMP/tag-probe.err"; then
+            cat "$RUNNER_TEMP/tag-probe.err" >&2
+            exit 1
+          fi
+          gh release create "$TAG" "$JAR" --repo "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA" --title "SF_FoxyMachines $VERSION"             --notes-file "docs/releases/$VERSION.md"
+          mkdir -p "$RUNNER_TEMP/published-verification"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY"             --pattern "$OUTPUT_NAME" --dir "$RUNNER_TEMP/published-verification"
+          echo "$SHA256  $RUNNER_TEMP/published-verification/$OUTPUT_NAME" | sha256sum -c -
